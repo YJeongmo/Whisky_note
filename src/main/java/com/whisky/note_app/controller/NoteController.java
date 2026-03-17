@@ -20,7 +20,10 @@ public class NoteController {
     }
 
     @GetMapping
-    public List<TastingNote> list() {
+    public List<TastingNote> list(@RequestParam(name = "name", required = false) String name) {
+        if (name != null && !name.isEmpty()) {
+            return noteService.serchByWhiskyName(name);
+        }
         return noteService.findAllNotes();
     }
 }

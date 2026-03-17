@@ -22,14 +22,19 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    @Transactional(readOnly = true) // 조회 전용
     public List<TastingNote> findAllNotes() {
-        // TODO: 구현 예정
-        return null;
+        return noteRepository.findAll();
     }
 
     @Override
     public TastingNote findNoteById(Long id) {
         // TODO: 구현 예정
         return null;
+    }
+
+    @Override
+    public List<TastingNote> serchByWhiskyName(String name) {
+        return noteRepository.findByWhiskyNameContaining(name);
     }
 }

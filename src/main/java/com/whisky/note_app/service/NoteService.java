@@ -7,4 +7,5 @@ public interface NoteService {
     Long saveNote(TastingNote note);
     List<TastingNote> findAllNotes();
     TastingNote findNoteById(Long id);
+    List<TastingNote> serchByWhiskyName(String name);
 }
