@@ -37,4 +37,37 @@ class NoteServiceImplTest {
         // 3. Then
         assertThat(result).isNotEmpty();
     }
+
+    @Test
+    @DisplayName("노트 수정 테스트")
+    void updateNoteTest() {
+        // Given: 기존 데이터 저장
+        TastingNote oldNote = new TastingNote();
+        oldNote.setWhiskyName("옛날 위스키");
+        TastingNote savedNote = noteRepository.save(oldNote);
+
+        // When: 수정 데이터 생성 및 요청
+        TastingNote updateParam = new TastingNote();
+        updateParam.setWhiskyName("새로운 위스키");
+        noteService.updateNote(savedNote.getId(), updateParam);
+
+        // Then: 값이 바뀌었는지 확인
+        TastingNote updated = noteRepository.findById(savedNote.getId()).get();
+        assertThat(updated.getWhiskyName()).isEqualTo("새로운 위스키");
+    }
+
+    @Test
+    @DisplayName("노트 삭제 테스트")
+    void deleteNoteTest() {
+        // Given
+        TastingNote note = new TastingNote();
+        note.setWhiskyName("지워질 위스키");
+        TastingNote savedNote = noteRepository.save(note);
+
+        // When
+        noteService.deleteNote(savedNote.getId());
+
+        // Then
+        assertThat(noteRepository.findById(savedNote.getId())).isEmpty();
+    }
 }

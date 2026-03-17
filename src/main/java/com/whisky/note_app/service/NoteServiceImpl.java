@@ -53,4 +53,26 @@ public class NoteServiceImpl implements NoteService {
     public List<TastingNote> findByPeriod(LocalDate start, LocalDate end) {
         return noteRepository.findByCreatedAtBetween(start, end);
     }
+
+    @Override
+    public TastingNote updateNote(Long id, TastingNote updateParam) {
+        TastingNote note = noteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 노트를 찾을 수 없습니다. id=" + id));
+
+        // 내용 수정 (이름, 카테고리, 평점 등 필요한 필드 업데이트)
+        note.setWhiskyName(updateParam.getWhiskyName());
+        note.setCategory(updateParam.getCategory());
+        note.setSubCategory(updateParam.getSubCategory());
+        note.setNose(updateParam.getNose());
+        note.setPalate(updateParam.getPalate());
+        note.setFinish(updateParam.getFinish());
+        note.setRating(updateParam.getRating());
+
+        return note; // @Transactional 으로 별도의 저장x
+    }
+
+    @Override
+    public void deleteNote(Long id) {
+        noteRepository.deleteById(id);
+    }
 }

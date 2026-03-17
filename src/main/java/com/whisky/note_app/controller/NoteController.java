@@ -55,4 +55,15 @@ public class NoteController {
 
         return noteService.findByPeriod(start, end);
     }
+
+    @PutMapping("/{id}")
+    public TastingNote update(@PathVariable(name = "id") Long id, @RequestBody TastingNote note) {
+        return noteService.updateNote(id, note);
+    }
+
+    @DeleteMapping("/{id}")
+    public String delete(@PathVariable(name = "id") Long id) {
+        noteService.deleteNote(id);
+        return "ok";
+    }
 }
