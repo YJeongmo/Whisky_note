@@ -7,7 +7,7 @@ import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
 @Getter @Setter
@@ -26,7 +26,7 @@ public class TastingNote {
 
     @CreatedDate // 생성 시 날짜 자동 입력
     @Column(updatable = false) // 수정 시에는 날짜가 변하지 않도록 고정
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Column(columnDefinition = "TEXT") // 내용이 길 수 있으므로 TEXT 타입 지정
     private String nose;    // 향

@@ -3,8 +3,10 @@ package com.whisky.note_app.controller;
 import com.whisky.note_app.domain.TastingNote;
 import com.whisky.note_app.service.NoteService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -25,5 +27,18 @@ public class NoteController {
             return noteService.serchByWhiskyName(name);
         }
         return noteService.findAllNotes();
+    }
+
+    @GetMapping("/period")
+    public List<TastingNote> getByperiod(
+            @RequestParam(name = "start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate start,
+            @RequestParam(name = "end", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate end) {
+
+        // 종료일이 없으면 자동으로 종료일 = 현재시간
+        if (end == null) {
+            end = LocalDate.now();
+        }
+
+        return noteService.findByPeriod(start, end);
     }
 }

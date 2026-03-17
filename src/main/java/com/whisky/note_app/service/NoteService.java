@@ -1,6 +1,8 @@
 package com.whisky.note_app.service;
 
 import com.whisky.note_app.domain.TastingNote;
+
+import java.time.LocalDate;
 import java.util.List;
 
 public interface NoteService {
@@ -8,4 +10,5 @@ public interface NoteService {
     List<TastingNote> findAllNotes();
     TastingNote findNoteById(Long id);
     List<TastingNote> serchByWhiskyName(String name);
+    List<TastingNote> findByPeriod(LocalDate start, LocalDate end);
 }

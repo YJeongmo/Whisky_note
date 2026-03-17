@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -36,5 +37,10 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public List<TastingNote> serchByWhiskyName(String name) {
         return noteRepository.findByWhiskyNameContaining(name);
+    }
+
+    @Override
+    public List<TastingNote> findByPeriod(LocalDate start, LocalDate end) {
+        return noteRepository.findByCreatedAtBetween(start, end);
     }
 }
