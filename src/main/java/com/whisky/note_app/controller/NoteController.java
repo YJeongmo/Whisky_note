@@ -21,14 +21,28 @@ public class NoteController {
         return noteService.saveNote(note);
     }
 
+    // 이름, 카테고리 조회
     @GetMapping
-    public List<TastingNote> list(@RequestParam(name = "name", required = false) String name) {
+    public List<TastingNote> list(@RequestParam(name = "name", required = false) String name,
+                                  @RequestParam(name = "category", required = false) String category,
+                                  @RequestParam(name = "subCategory", required = false) String subCategory) {
+
         if (name != null && !name.isEmpty()) {
             return noteService.serchByWhiskyName(name);
         }
+
+        if (category != null && !category.isEmpty()) {
+            return noteService.searchByCategory(category); // 서비스 호출로 변경
+        }
+
+        if (subCategory != null && !subCategory.isEmpty()) {
+            return noteService.searchBySubCategory(subCategory); // 서비스 호출로 변경
+        }
+
         return noteService.findAllNotes();
     }
 
+    // 기간 조회
     @GetMapping("/period")
     public List<TastingNote> getByperiod(
             @RequestParam(name = "start") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDate start,

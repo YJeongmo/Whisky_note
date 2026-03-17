@@ -10,5 +10,7 @@ public interface NoteService {
     List<TastingNote> findAllNotes();
     TastingNote findNoteById(Long id);
     List<TastingNote> serchByWhiskyName(String name);
+    List<TastingNote> searchByCategory(String category);
+    List<TastingNote> searchBySubCategory(String subCategory);
     List<TastingNote> findByPeriod(LocalDate start, LocalDate end);
 }

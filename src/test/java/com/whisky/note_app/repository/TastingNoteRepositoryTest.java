@@ -53,4 +53,25 @@ class TastingNoteRepositoryTest {
         assertThat(result).isNotEmpty();
         assertThat(result.get(0).getWhiskyName()).isEqualTo("라가불린 16년");
     }
+
+    @Test
+    @DisplayName("카테고리 및 서브카테고리 검색 테스트")
+    void findByCategoryTest() {
+        // 1. Given
+        TastingNote note = new TastingNote();
+        note.setWhiskyName("보모어 12년");
+        note.setCategory("스카치");
+        note.setSubCategory("피트");
+        noteRepository.save(note);
+
+        // 2. When
+        List<TastingNote> categoryResult = noteRepository.findByCategoryContaining("스카치");
+        List<TastingNote> subCategoryResult = noteRepository.findBySubCategoryContaining("피트");
+
+        // 3. Then
+        assertThat(categoryResult).isNotEmpty();
+        assertThat(categoryResult.get(0).getCategory()).isEqualTo("스카치");
+        assertThat(subCategoryResult).isNotEmpty();
+        assertThat(subCategoryResult.get(0).getSubCategory()).isEqualTo("피트");
+    }
 }

@@ -13,4 +13,8 @@ public interface TastingNoteRepository extends JpaRepository<TastingNote, Long> 
     List<TastingNote> findByWhiskyNameContaining(String name); // 이름으로 조회
 
     List<TastingNote> findByCreatedAtBetween(LocalDate start, LocalDate end); // 시작일 - 종료일 사이의 기간으로 조회
+
+    List<TastingNote> findByCategoryContaining(String category);
+
+    List<TastingNote> findBySubCategoryContaining(String subCategory);
 }

@@ -40,6 +40,16 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    public List<TastingNote> searchByCategory(String category) {
+       return noteRepository.findByCategoryContaining(category);
+    }
+
+    @Override
+    public List<TastingNote> searchBySubCategory(String subCategory) {
+        return noteRepository.findBySubCategoryContaining(subCategory);
+    }
+
+    @Override
     public List<TastingNote> findByPeriod(LocalDate start, LocalDate end) {
         return noteRepository.findByCreatedAtBetween(start, end);
     }
