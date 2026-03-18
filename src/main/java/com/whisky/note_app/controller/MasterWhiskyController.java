@@ -14,6 +14,7 @@ import java.util.List;
 @RequestMapping("/api/master")
 @RequiredArgsConstructor
 public class MasterWhiskyController {
+
     private final MasterWhiskyService masterService;
 
     @GetMapping("/search")
@@ -31,5 +32,11 @@ public class MasterWhiskyController {
     @GetMapping
     public List<MasterWhisky> getAll() {
         return masterService.searchWhiskies(null, null, null, null, null);
+    }
+
+    // 위스키 추천 알고리즘
+    @GetMapping("/recommend")
+    public List<MasterWhisky> recommend(@RequestParam String keywords) {
+        return masterService.getRecommendations(keywords);
     }
 }

@@ -2,6 +2,7 @@ package com.whisky.note_app.service;
 
 import com.whisky.note_app.entity.MasterWhisky;
 import com.whisky.note_app.repository.MasterWhiskyRepository;
+import com.whisky.note_app.service.recommendation.RecommendationStrategy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -10,7 +11,9 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MasterWhiskyService {
+
     private final MasterWhiskyRepository masterRepository;
+    private final RecommendationStrategy recommendationStrategy;
 
     public List<MasterWhisky> searchWhiskies(String name, String distillery, String category, String subCategory, String priceRange) {
         // 우선은 이름 검색을 최우선으로 하고, 나머지는 단순 필터링으로 구현
@@ -22,5 +25,10 @@ public class MasterWhiskyService {
         if (priceRange != null && !priceRange.isEmpty()) return masterRepository.findByPriceRange(priceRange);
 
         return masterRepository.findAll();
+    }
+
+    public List<MasterWhisky> getRecommendations(String keywords) {
+        List<MasterWhisky> allWhiskies = masterRepository.findAll();
+        return recommendationStrategy.recommend(allWhiskies, keywords);
     }
 }
