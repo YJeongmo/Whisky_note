@@ -29,9 +29,10 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    @Transactional(readOnly = true) // 조회 전용 최적화
     public TastingNote findNoteById(Long id) {
-        // TODO: 구현 예정
-        return null;
+        // 리포지토리를 통해 ID로 조회하고, 없으면 null을 반환 (또는 예외 발생)
+        return noteRepository.findById(id).orElse(null);
     }
 
     @Override
