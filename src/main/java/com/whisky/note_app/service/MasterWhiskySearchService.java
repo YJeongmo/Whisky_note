@@ -10,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class MasterWhiskyService {
+public class MasterWhiskySearchService {
 
     private final MasterWhiskyRepository masterRepository;
     private final RecommendationStrategy recommendationStrategy;

@@ -29,10 +29,10 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    @Transactional(readOnly = true) // 조회 전용 최적화
+    @Transactional(readOnly = true) // 조회 전용
     public TastingNote findNoteById(Long id) {
-        // 리포지토리를 통해 ID로 조회하고, 없으면 null을 반환 (또는 예외 발생)
-        return noteRepository.findById(id).orElse(null);
+        return noteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 노트를 찾을 수 없습니다: " + id));
     }
 
     @Override

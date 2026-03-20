@@ -1,7 +1,7 @@
 package com.whisky.note_app.controller;
 
 import com.whisky.note_app.entity.MasterWhisky;
-import com.whisky.note_app.service.MasterWhiskyService;
+import com.whisky.note_app.service.MasterWhiskySearchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MasterWhiskyController {
 
-    private final MasterWhiskyService masterService;
+    private final MasterWhiskySearchService masterService;
 
     @GetMapping("/search")
     public List<MasterWhisky> search(
