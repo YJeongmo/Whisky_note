@@ -6,6 +6,7 @@ import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
 import com.whisky.note_app.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,7 +41,7 @@ public class AuthController {
      * 실패 (이메일 중복): 400 Bad Request + ErrorResponse (GlobalExceptionHandler 처리)
      */
     @PostMapping("/signup")
-    public ResponseEntity<SignUpResponse> signup(@RequestBody SignUpRequest request) {
+    public ResponseEntity<SignUpResponse> signup(@Valid @RequestBody SignUpRequest request) {
         SignUpResponse response = authService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -52,7 +53,7 @@ public class AuthController {
      * 실패 (이메일/비밀번호 불일치): 401 Unauthorized + ErrorResponse
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }

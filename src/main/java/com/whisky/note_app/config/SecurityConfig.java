@@ -1,74 +1,91 @@
 package com.whisky.note_app.config;
 
+import com.whisky.note_app.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * [Spring Security 설정: SecurityConfig]
+ * [Spring Security 설정: SecurityConfig — Step 5 완성]
  *
- * [현재 단계 (Step 2) — 최소 설정]
- * JWT 필터는 Step 5에서 추가합니다.
- * 지금은 회원가입/로그인 API가 동작할 수 있도록 최소한만 설정합니다.
+ * [전체 인증/인가 흐름]
+ * HTTP 요청
+ *   → JwtAuthenticationFilter (토큰 파싱 → SecurityContext 저장)
+ *   → UsernamePasswordAuthenticationFilter (건너뜀 — 비활성화 상태)
+ *   → Controller
+ *   → (인증 필요 경로인데 토큰 없으면 403 Forbidden)
  *
- * [왜 SecurityFilterChain Bean으로 등록하는가?]
- * Spring Security 5.7 이후 WebSecurityConfigurerAdapter를 상속하는 방식은 deprecated됩니다.
- * 대신 SecurityFilterChain을 Bean으로 등록하는 방식을 사용합니다.
- * 더 유연하고 여러 SecurityFilterChain을 조합하기 쉽습니다.
+ * [SessionCreationPolicy.STATELESS]
+ * JWT는 서버가 세션을 유지할 필요 없습니다.
+ * STATELESS로 설정하면 Spring Security가 HttpSession을 생성하지 않습니다.
+ * 수평 확장(Scale-out)에 유리합니다.
  *
- * [BCryptPasswordEncoder Bean 등록 위치]
- * SecurityConfig에 두는 이유: PasswordEncoder는 Security 설정의 일부이기 때문입니다.
- * AuthService에서 @Autowired로 주입받아 사용합니다.
+ * [경로별 인가 규칙]
+ * - /api/auth/**  : 인증 없이 접근 가능 (회원가입, 로그인)
+ * - 나머지        : 인증 필요 (유효한 JWT 토큰 있어야 함)
  *
- * [Step 5에서 추가될 것들]
- * - JwtAuthenticationFilter (JWT 검증 필터)
- * - SessionCreationPolicy.STATELESS (세션 비활성화)
- * - 경로별 인가 규칙 세분화
+ * [CORS 설정]
+ * 프론트엔드 개발 시 별도 도메인에서 API를 호출할 경우 CORS 정책이 필요합니다.
+ * 현재는 주석으로 위치만 표시해두고, 프론트엔드 연결 시 활성화합니다.
  */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    /**
-     * [BCryptPasswordEncoder Bean]
-     * 비밀번호 단방향 암호화에 사용합니다.
-     * Bean으로 등록하면:
-     * 1. 애플리케이션 전체에서 같은 인스턴스를 공유합니다 (싱글턴)
-     * 2. 테스트에서 Mock으로 교체하기 쉽습니다
-     * 3. 순환 참조 문제를 피할 수 있습니다
-     */
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    /**
-     * [SecurityFilterChain — 현재는 최소 설정]
-     *
-     * Step 2 현재:
-     * - CSRF 비활성화: REST API는 세션을 사용하지 않아 CSRF 공격에 취약하지 않습니다.
-     * - 모든 요청 허용 (permitAll): JWT 필터가 없는 지금은 일단 열어둡니다.
-     *   Step 5에서 경로별 인가 규칙으로 교체합니다.
-     * - 폼 로그인 비활성화: REST API이므로 HTML 폼 로그인 불필요
-     * - HTTP Basic 비활성화: 브라우저 팝업 로그인창 불필요
-     */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // REST API이므로 CSRF/폼 로그인/HTTP Basic 모두 비활성화
             .csrf(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
+
+            // JWT는 stateless — 서버가 세션을 유지하지 않음
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+
+            // 경로별 인가 규칙
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // Step 5에서 세분화 예정
-            );
+                .requestMatchers("/api/auth/**").permitAll()  // 회원가입, 로그인은 인증 불필요
+                .anyRequest().authenticated()                 // 나머지는 JWT 인증 필요
+            )
+
+            // JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 삽입
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+            // [CORS — 프론트엔드 연결 시 활성화]
+            // .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();
     }
+
+    // [CORS 설정 — 프론트엔드 도메인 확정 후 활성화]
+    // @Bean
+    // public CorsConfigurationSource corsConfigurationSource() {
+    //     CorsConfiguration config = new CorsConfiguration();
+    //     config.setAllowedOrigins(List.of("http://localhost:3000"));
+    //     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    //     config.setAllowedHeaders(List.of("*"));
+    //     config.setAllowCredentials(true);
+    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    //     source.registerCorsConfiguration("/**", config);
+    //     return source;
+    // }
 }

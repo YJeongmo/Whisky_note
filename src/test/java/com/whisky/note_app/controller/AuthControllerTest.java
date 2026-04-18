@@ -5,13 +5,18 @@ import com.whisky.note_app.dto.auth.LoginRequest;
 import com.whisky.note_app.dto.auth.LoginResponse;
 import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
+import com.whisky.note_app.config.SecurityConfig;
 import com.whisky.note_app.exception.UnauthorizedException;
+import com.whisky.note_app.security.JwtAuthenticationFilter;
 import com.whisky.note_app.service.AuthService;
+import com.whisky.note_app.service.CustomUserDetailsService;
+import com.whisky.note_app.util.JwtUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -45,6 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * SecurityConfig에서 csrf().disable()을 했지만 테스트 환경에서는 명시적으로 처리합니다.
  */
 @WebMvcTest(AuthController.class)
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
 class AuthControllerTest {
 
     @Autowired
@@ -55,6 +61,12 @@ class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private JwtUtil jwtUtil;
+
+    @MockBean
+    private CustomUserDetailsService customUserDetailsService;
 
     @Test
     @DisplayName("회원가입 성공 시 201 Created와 사용자 정보를 반환해야 한다")
@@ -83,6 +95,57 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("test@test.com"))
                 .andExpect(jsonPath("$.nickname").value("테스터"))
                 .andExpect(jsonPath("$.id").value(1));
+    }
+
+    // ===================== @Valid 검증 테스트 =====================
+
+    @Test
+    @DisplayName("이메일 형식이 올바르지 않으면 400을 반환해야 한다")
+    @WithMockUser
+    void signup_invalidEmail() throws Exception {
+        SignUpRequest request = new SignUpRequest();
+        request.setEmail("not-an-email"); // 이메일 형식 아님
+        request.setPassword("password123");
+        request.setNickname("테스터");
+
+        mockMvc.perform(post("/api/auth/signup")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()); // 400
+    }
+
+    @Test
+    @DisplayName("비밀번호가 8자 미만이면 400을 반환해야 한다")
+    @WithMockUser
+    void signup_shortPassword() throws Exception {
+        SignUpRequest request = new SignUpRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("1234567"); // 7자 (8자 미만)
+        request.setNickname("테스터");
+
+        mockMvc.perform(post("/api/auth/signup")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()); // 400
+    }
+
+    @Test
+    @DisplayName("필수 필드가 비어있으면 400을 반환해야 한다")
+    @WithMockUser
+    void signup_blankFields() throws Exception {
+        SignUpRequest request = new SignUpRequest();
+        request.setEmail(""); // 빈 문자열
+        request.setPassword("");
+        request.setNickname("");
+
+        mockMvc.perform(post("/api/auth/signup")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest()) // 400
+                .andExpect(jsonPath("$.message").exists()); // 오류 메시지 존재 확인
     }
 
     // ===================== 로그인 테스트 =====================

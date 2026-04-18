@@ -42,6 +42,9 @@ dependencies {
 	// AOP — 전역 로깅, 횡단 관심사 처리
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+	// Bean Validation — @Valid 입력값 검증
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
 	// Phase 1: Spring Security + JWT
 	// spring-boot-starter-security: 인증/인가 프레임워크
 	implementation 'org.springframework.boot:spring-boot-starter-security'

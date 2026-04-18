@@ -3,8 +3,11 @@ package com.whisky.note_app.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
 
 /**
  * [전역 예외 처리: GlobalExceptionHandler]
@@ -30,6 +33,28 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * [400 Bad Request — @Valid 검증 실패]
+     * @Valid 검증 실패 시 Spring이 자동으로 던지는 예외입니다.
+     * 여러 필드가 동시에 실패할 수 있으므로 모든 오류 메시지를 모아서 반환합니다.
+     *
+     * 예시 응답:
+     * { "status": 400, "message": "이메일을 입력해주세요. / 비밀번호는 8자 이상이어야 합니다." }
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
+        // 모든 필드 오류 메시지를 " / "로 이어붙입니다
+        String message = e.getBindingResult().getFieldErrors()
+                .stream()
+                .map(error -> error.getDefaultMessage())
+                .collect(Collectors.joining(" / "));
+
+        log.warn("[400 Validation Failed] {}", message);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(400, message));
+    }
 
     /**
      * [400 Bad Request]
