@@ -63,8 +63,13 @@ public class SecurityConfig {
 
             // 경로별 인가 규칙
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()  // 회원가입, 로그인은 인증 불필요
-                .anyRequest().authenticated()                 // 나머지는 JWT 인증 필요
+                .requestMatchers("/api/auth/**").permitAll()           // 회원가입, 로그인
+                .requestMatchers(                                       // Swagger UI — 인증 불필요
+                    "/swagger-ui/**",
+                    "/v3/api-docs/**",
+                    "/swagger-ui.html"
+                ).permitAll()
+                .anyRequest().authenticated()                          // 나머지는 JWT 인증 필요
             )
 
             // JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 삽입

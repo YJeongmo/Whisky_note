@@ -5,6 +5,10 @@ import com.whisky.note_app.dto.auth.LoginResponse;
 import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
 import com.whisky.note_app.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Step 4에서 추가될 API:
  * - POST /api/auth/login   : 로그인 (JWT 발급)
  */
+@Tag(name = "Auth", description = "회원가입 / 로그인 API")
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -34,24 +39,22 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /**
-     * [POST /api/auth/signup — 회원가입]
-     *
-     * 성공: 201 Created + SignUpResponse
-     * 실패 (이메일 중복): 400 Bad Request + ErrorResponse (GlobalExceptionHandler 처리)
-     */
+    @Operation(summary = "회원가입", description = "이메일, 비밀번호, 닉네임으로 계정을 생성합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "회원가입 성공"),
+        @ApiResponse(responseCode = "400", description = "이메일 중복 또는 입력값 오류")
+    })
     @PostMapping("/signup")
     public ResponseEntity<SignUpResponse> signup(@Valid @RequestBody SignUpRequest request) {
         SignUpResponse response = authService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * [POST /api/auth/login — 로그인]
-     *
-     * 성공: 200 OK + LoginResponse (JWT 토큰 포함)
-     * 실패 (이메일/비밀번호 불일치): 401 Unauthorized + ErrorResponse
-     */
+    @Operation(summary = "로그인", description = "로그인 성공 시 JWT 토큰을 반환합니다. 이후 Authorize 버튼에 토큰을 입력하세요.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "로그인 성공 — JWT 토큰 반환"),
+        @ApiResponse(responseCode = "401", description = "이메일 또는 비밀번호 불일치")
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
