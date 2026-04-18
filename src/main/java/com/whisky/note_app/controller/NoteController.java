@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -50,7 +51,7 @@ public class NoteController {
     @ApiResponse(responseCode = "201", description = "노트 생성 성공 — 생성된 노트 ID 반환")
     @PostMapping
     public ResponseEntity<Long> create(
-            @RequestBody CreateNoteRequest request,
+            @Valid @RequestBody CreateNoteRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal User user) {
         Long id = noteService.saveNote(request, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(id);
@@ -111,7 +112,7 @@ public class NoteController {
     @PutMapping("/{id}")
     public ResponseEntity<NoteResponse> update(
             @PathVariable(name = "id") Long id,
-            @RequestBody UpdateNoteRequest request,
+            @Valid @RequestBody UpdateNoteRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(noteService.updateNote(id, request, user));
     }

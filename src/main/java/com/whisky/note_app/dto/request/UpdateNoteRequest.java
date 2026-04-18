@@ -1,5 +1,7 @@
 package com.whisky.note_app.dto.request;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -7,29 +9,27 @@ import lombok.Setter;
 /**
  * [DTO: UpdateNoteRequest — 노트 수정 요청]
  *
- * [왜 Create와 Update를 분리하는가?]
- * 지금은 필드가 동일해 보이지만, 실제로는 다음과 같이 달라질 수 있습니다:
- *
- * - 생성 시에만 필요한 필드: masterWhiskyId (연결할 마스터 위스키 선택)
- * - 수정 시에만 필요한 필드: (예) 수정 사유, 버전 번호(@Version) 등
- * - 생성 시엔 필수, 수정 시엔 선택: whiskyName (이름은 바꾸지 않는 경우도 있음)
- *
- * DTO를 분리하면 이러한 요구사항 변화에 유연하게 대응할 수 있습니다.
- * (나중에 @Valid 유효성 검사를 추가할 때도 Create/Update 규칙이 다를 수 있습니다)
+ * 수정은 부분 업데이트(PATCH 방식)를 따릅니다.
+ * 입력된 필드만 변경하고 null인 필드는 기존 값을 유지합니다.
+ * 따라서 whiskyName은 @NotBlank를 달지 않습니다 (수정 안 해도 되니까).
+ * rating만 범위 검증을 추가합니다.
  */
 @Getter
 @Setter
 @NoArgsConstructor
 public class UpdateNoteRequest {
 
-    private String whiskyName;   // 위스키 이름
-    private String category;     // 대분류
-    private String subCategory;  // 소분류
+    private String whiskyName;
+    private String category;
+    private String subCategory;
 
-    private String nose;   // 향
-    private String palate; // 맛
-    private String finish; // 여운
+    private String nose;
+    private String palate;
+    private String finish;
 
-    private Double rating;   // 평점
-    private String imageUrl; // 이미지 경로
+    @DecimalMin(value = "0.0", message = "평점은 0.0 이상이어야 합니다.")
+    @DecimalMax(value = "10.0", message = "평점은 10.0 이하여야 합니다.")
+    private Double rating;
+
+    private String imageUrl;
 }
