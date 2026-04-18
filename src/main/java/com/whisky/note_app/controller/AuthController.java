@@ -1,5 +1,7 @@
 package com.whisky.note_app.controller;
 
+import com.whisky.note_app.dto.auth.LoginRequest;
+import com.whisky.note_app.dto.auth.LoginResponse;
 import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
 import com.whisky.note_app.service.AuthService;
@@ -41,5 +43,17 @@ public class AuthController {
     public ResponseEntity<SignUpResponse> signup(@RequestBody SignUpRequest request) {
         SignUpResponse response = authService.signup(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * [POST /api/auth/login — 로그인]
+     *
+     * 성공: 200 OK + LoginResponse (JWT 토큰 포함)
+     * 실패 (이메일/비밀번호 불일치): 401 Unauthorized + ErrorResponse
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 }

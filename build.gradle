@@ -39,6 +39,9 @@ dependencies {
 	testImplementation 'com.h2database:h2' // 테스트 전용
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+	// AOP — 전역 로깅, 횡단 관심사 처리
+	implementation 'org.springframework.boot:spring-boot-starter-aop'
+
 	// Phase 1: Spring Security + JWT
 	// spring-boot-starter-security: 인증/인가 프레임워크
 	implementation 'org.springframework.boot:spring-boot-starter-security'

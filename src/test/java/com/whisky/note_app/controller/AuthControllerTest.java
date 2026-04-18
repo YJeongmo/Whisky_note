@@ -1,8 +1,11 @@
 package com.whisky.note_app.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.whisky.note_app.dto.auth.LoginRequest;
+import com.whisky.note_app.dto.auth.LoginResponse;
 import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
+import com.whisky.note_app.exception.UnauthorizedException;
 import com.whisky.note_app.service.AuthService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -80,6 +83,57 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("test@test.com"))
                 .andExpect(jsonPath("$.nickname").value("테스터"))
                 .andExpect(jsonPath("$.id").value(1));
+    }
+
+    // ===================== 로그인 테스트 =====================
+
+    @Test
+    @DisplayName("로그인 성공 시 200 OK와 JWT 토큰을 반환해야 한다")
+    @WithMockUser
+    void login_success() throws Exception {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("password123");
+
+        LoginResponse response = LoginResponse.builder()
+                .token("mocked.jwt.token")
+                .email("test@test.com")
+                .nickname("테스터")
+                .build();
+
+        given(authService.login(any(LoginRequest.class))).willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("mocked.jwt.token"))
+                .andExpect(jsonPath("$.email").value("test@test.com"))
+                .andExpect(jsonPath("$.nickname").value("테스터"));
+    }
+
+    @Test
+    @DisplayName("로그인 실패 시 401 Unauthorized를 반환해야 한다")
+    @WithMockUser
+    void login_fail() throws Exception {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("wrongPassword");
+
+        willThrow(new UnauthorizedException("이메일 또는 비밀번호가 올바르지 않습니다."))
+                .given(authService).login(any(LoginRequest.class));
+
+        // when & then
+        mockMvc.perform(post("/api/auth/login")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized()) // 401
+                .andExpect(jsonPath("$.message").value("이메일 또는 비밀번호가 올바르지 않습니다."));
     }
 
     @Test

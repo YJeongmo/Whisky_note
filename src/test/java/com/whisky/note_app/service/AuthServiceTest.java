@@ -1,10 +1,14 @@
 package com.whisky.note_app.service;
 
+import com.whisky.note_app.dto.auth.LoginRequest;
+import com.whisky.note_app.dto.auth.LoginResponse;
 import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
 import com.whisky.note_app.entity.User;
 import com.whisky.note_app.entity.UserRole;
+import com.whisky.note_app.exception.UnauthorizedException;
 import com.whisky.note_app.repository.UserRepository;
+import com.whisky.note_app.util.JwtUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,6 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,7 +51,10 @@ class AuthServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @InjectMocks // @Mock들을 AuthService 생성자에 주입합니다
+    @Mock
+    private JwtUtil jwtUtil;
+
+    @InjectMocks
     private AuthService authService;
 
     @Test
@@ -132,5 +141,78 @@ class AuthServiceTest {
     // verify(mock).save(argThat(...)) 에서 사용하는 헬퍼
     private static <T> T argThat(org.mockito.ArgumentMatcher<T> matcher) {
         return org.mockito.ArgumentMatchers.argThat(matcher);
+    }
+
+    // ===================== 로그인 테스트 =====================
+
+    @Test
+    @DisplayName("올바른 이메일/비밀번호로 로그인 시 토큰이 발급되어야 한다")
+    void login_success() {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("plainPassword");
+
+        User mockUser = User.builder()
+                .email("test@test.com")
+                .password("$2a$encodedPassword")
+                .nickname("테스터")
+                .role(UserRole.USER)
+                .build();
+
+        given(userRepository.findByEmail("test@test.com")).willReturn(Optional.of(mockUser));
+        given(passwordEncoder.matches("plainPassword", "$2a$encodedPassword")).willReturn(true);
+        given(jwtUtil.generateToken("test@test.com")).willReturn("mocked.jwt.token");
+
+        // when
+        LoginResponse response = authService.login(request);
+
+        // then
+        assertThat(response.getToken()).isEqualTo("mocked.jwt.token");
+        assertThat(response.getEmail()).isEqualTo("test@test.com");
+        assertThat(response.getNickname()).isEqualTo("테스터");
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 이메일로 로그인 시 UnauthorizedException이 발생해야 한다")
+    void login_emailNotFound() {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("nobody@test.com");
+        request.setPassword("password");
+
+        given(userRepository.findByEmail("nobody@test.com")).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("이메일 또는 비밀번호가 올바르지 않습니다");
+    }
+
+    @Test
+    @DisplayName("비밀번호가 틀리면 UnauthorizedException이 발생해야 한다")
+    void login_wrongPassword() {
+        // given
+        LoginRequest request = new LoginRequest();
+        request.setEmail("test@test.com");
+        request.setPassword("wrongPassword");
+
+        User mockUser = User.builder()
+                .email("test@test.com")
+                .password("$2a$encodedPassword")
+                .nickname("테스터")
+                .role(UserRole.USER)
+                .build();
+
+        given(userRepository.findByEmail("test@test.com")).willReturn(Optional.of(mockUser));
+        given(passwordEncoder.matches("wrongPassword", "$2a$encodedPassword")).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessageContaining("이메일 또는 비밀번호가 올바르지 않습니다");
+
+        // 비밀번호가 틀렸으므로 토큰이 발급되면 안 됩니다
+        verify(jwtUtil, never()).generateToken(anyString());
     }
 }

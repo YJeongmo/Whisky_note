@@ -47,6 +47,18 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * [401 Unauthorized]
+     * 로그인 실패 시 AuthService에서 던지는 UnauthorizedException을 처리합니다.
+     */
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException e) {
+        log.warn("[401 Unauthorized] {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.of(401, e.getMessage()));
+    }
+
+    /**
      * [500 Internal Server Error]
      * 예상치 못한 모든 예외를 처리합니다.
      * 클라이언트에게는 일반적인 오류 메시지만 보내고,
