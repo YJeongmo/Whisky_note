@@ -19,3 +19,8 @@ spring:
   h2:
     console:
       enabled: true
+
+# JWT (테스트 전용 설정)
+jwt:
+  secret: test-jwt-secret-key-must-be-at-least-256-bits-long-for-hs256-algorithm
+  expiration: 86400000
