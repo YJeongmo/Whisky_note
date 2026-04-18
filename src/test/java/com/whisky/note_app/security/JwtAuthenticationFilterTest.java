@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -75,7 +76,7 @@ class JwtAuthenticationFilterTest {
         given(jwtUtil.validateToken(validToken)).willReturn(true);
         given(jwtUtil.getEmailFromToken(validToken)).willReturn(email);
         given(userDetailsService.loadUserByUsername(email)).willReturn(mockUser);
-        given(noteService.findAllNotes()).willReturn(List.of()); // 빈 목록 반환
+        given(noteService.findAllNotes(any(User.class))).willReturn(List.of());
 
         // when & then: Bearer 토큰 포함 → 필터 통과 → 200 OK
         mockMvc.perform(get("/api/notes")

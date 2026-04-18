@@ -73,4 +73,15 @@ public class TastingNote {
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "master_whisky_id")
     private MasterWhisky masterWhisky;
+
+    /**
+     * [User와의 연관관계 — Step 6 추가]
+     * - @ManyToOne(fetch=LAZY, optional=false): 노트는 반드시 작성자가 있어야 합니다.
+     * - optional=false → DB에서 NOT NULL FK로 생성됩니다.
+     * - LAZY: 노트 조회 시 User 정보를 즉시 JOIN하지 않습니다.
+     *   NoteResponse 변환 시 user.getId()만 사용하므로 프록시 객체로 충분합니다.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 }

@@ -1,13 +1,17 @@
 package com.whisky.note_app.service;
 
+import com.whisky.note_app.dto.request.CreateNoteRequest;
 import com.whisky.note_app.dto.request.UpdateNoteRequest;
 import com.whisky.note_app.dto.response.NoteResponse;
-import com.whisky.note_app.entity.TastingNote; // entity 패키지
+import com.whisky.note_app.entity.User;
+import com.whisky.note_app.entity.UserRole;
 import com.whisky.note_app.repository.TastingNoteRepository;
-import org.springframework.boot.test.context.SpringBootTest;
+import com.whisky.note_app.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,16 +19,16 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * [@SpringBootTest + @Transactional]
- * - @SpringBootTest: 전체 Spring 컨텍스트를 로드합니다 (Service, Repository 등 모두 포함)
- * - @Transactional: 각 테스트가 끝나면 자동 롤백합니다 → 테스트 간 데이터 간섭 없음
- * - @ActiveProfiles("test"): application-test.yml 활성화 → H2 인메모리 DB 사용
+ * [NoteServiceImplTest — Step 6 수정]
  *
- * [NoteServiceImpl 통합 테스트]
- * 서비스 레이어가 Repository와 올바르게 협력하는지 검증합니다.
+ * TastingNote에 user(NOT NULL FK)가 추가되어,
+ * 모든 테스트에서 User를 먼저 생성하고 noteService에 전달합니다.
+ *
+ * [데이터 격리 검증]
+ * userA의 노트를 userB로 조회하면 예외가 발생하는지도 확인합니다.
  */
 @SpringBootTest
 @Transactional
@@ -33,53 +37,135 @@ class NoteServiceImplTest {
 
     @Autowired NoteService noteService;
     @Autowired TastingNoteRepository noteRepository;
+    @Autowired UserRepository userRepository;
+
+    private User userA;
+    private User userB;
+
+    @BeforeEach
+    void setUp() {
+        // 각 테스트 전에 두 명의 사용자를 생성합니다
+        userA = userRepository.save(User.builder()
+                .email("usera@test.com")
+                .password("encodedPw")
+                .nickname("유저A")
+                .role(UserRole.USER)
+                .build());
+
+        userB = userRepository.save(User.builder()
+                .email("userb@test.com")
+                .password("encodedPw")
+                .nickname("유저B")
+                .role(UserRole.USER)
+                .build());
+    }
 
     @Test
-    @DisplayName("종료일(end)을 입력하지 않고 조회하면 내부적으로 오늘까지 포함해 조회한다")
-    void findByPeriodWithoutEnd() {
-        // 1. Given: 오늘 날짜 데이터 하나 저장
-        TastingNote note = new TastingNote();
-        note.setWhiskyName("오늘의 위스키");
-        note.setCreatedAt(LocalDate.now());
-        noteRepository.save(note);
+    @DisplayName("노트 저장 후 본인 노트 목록에서 조회되어야 한다")
+    void saveAndFindAllNotes() {
+        // given
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("아드벡 10년");
+        request.setCategory("스카치");
 
-        // 2. When: 시작일(어제)만 있고 종료일은 null인 경우
-        List<NoteResponse> result = noteService.findByPeriod(LocalDate.now().minusDays(1), LocalDate.now());
+        // when
+        noteService.saveNote(request, userA);
+        List<NoteResponse> result = noteService.findAllNotes(userA);
 
-        // 3. Then
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getWhiskyName()).isEqualTo("아드벡 10년");
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 노트는 조회되지 않아야 한다 (데이터 격리)")
+    void userIsolation_otherUserNoteNotVisible() {
+        // given: userA의 노트 생성
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("아드벡 10년");
+        noteService.saveNote(request, userA);
+
+        // when: userB로 전체 조회
+        List<NoteResponse> userBNotes = noteService.findAllNotes(userB);
+
+        // then: userB에게는 보이지 않음
+        assertThat(userBNotes).isEmpty();
+    }
+
+    @Test
+    @DisplayName("기간 조회는 본인 노트만 반환해야 한다")
+    void findByPeriod_onlyOwnNotes() {
+        // given: userA의 노트 저장
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("오늘의 위스키");
+        noteService.saveNote(request, userA);
+
+        // when: userA로 기간 조회
+        List<NoteResponse> result = noteService.findByPeriod(
+                LocalDate.now().minusDays(1), LocalDate.now(), userA);
+
+        // then
         assertThat(result).isNotEmpty();
     }
 
     @Test
-    @DisplayName("노트 수정 테스트")
-    void updateNoteTest() {
-        // Given: 기존 데이터 저장
-        TastingNote oldNote = new TastingNote();
-        oldNote.setWhiskyName("옛날 위스키");
-        TastingNote savedNote = noteRepository.save(oldNote);
+    @DisplayName("노트 수정은 본인 것만 가능해야 한다")
+    void updateNote_onlyOwner() {
+        // given: userA의 노트 생성
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("옛날 위스키");
+        Long noteId = noteService.saveNote(request, userA);
 
-        // When: UpdateNoteRequest DTO로 수정 요청
+        // when: userA가 수정
         UpdateNoteRequest updateRequest = new UpdateNoteRequest();
         updateRequest.setWhiskyName("새로운 위스키");
-        noteService.updateNote(savedNote.getId(), updateRequest);
+        NoteResponse updated = noteService.updateNote(noteId, updateRequest, userA);
 
-        // Then: 값이 바뀌었는지 확인
-        TastingNote updated = noteRepository.findById(savedNote.getId()).get();
+        // then
         assertThat(updated.getWhiskyName()).isEqualTo("새로운 위스키");
     }
 
     @Test
-    @DisplayName("노트 삭제 테스트")
-    void deleteNoteTest() {
-        // Given
-        TastingNote note = new TastingNote();
-        note.setWhiskyName("지워질 위스키");
-        TastingNote savedNote = noteRepository.save(note);
+    @DisplayName("다른 사용자의 노트를 수정하려 하면 예외가 발생해야 한다")
+    void updateNote_otherUser_throwsException() {
+        // given: userA의 노트 생성
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("아드벡");
+        Long noteId = noteService.saveNote(request, userA);
 
-        // When
-        noteService.deleteNote(savedNote.getId());
+        // when & then: userB가 수정 시도 → 예외
+        UpdateNoteRequest updateRequest = new UpdateNoteRequest();
+        updateRequest.setWhiskyName("해킹 시도");
 
-        // Then
-        assertThat(noteRepository.findById(savedNote.getId())).isEmpty();
+        assertThatThrownBy(() -> noteService.updateNote(noteId, updateRequest, userB))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("노트 삭제는 본인 것만 가능해야 한다")
+    void deleteNote_onlyOwner() {
+        // given
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("지워질 위스키");
+        Long noteId = noteService.saveNote(request, userA);
+
+        // when
+        noteService.deleteNote(noteId, userA);
+
+        // then
+        assertThat(noteRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 노트를 삭제하려 하면 예외가 발생해야 한다")
+    void deleteNote_otherUser_throwsException() {
+        // given: userA의 노트
+        CreateNoteRequest request = new CreateNoteRequest();
+        request.setWhiskyName("아드벡");
+        Long noteId = noteService.saveNote(request, userA);
+
+        // when & then: userB가 삭제 시도 → 예외
+        assertThatThrownBy(() -> noteService.deleteNote(noteId, userB))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }
