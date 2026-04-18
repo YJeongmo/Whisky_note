@@ -5,26 +5,26 @@ import com.whisky.note_app.entity.UserPreference;
 import com.whisky.note_app.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * [PreferenceUpdateService — Step 9]
+ * [PreferenceUpdateService — Step 9 개선]
  *
- * [단일 책임 원칙(SRP)]
- * WhiskyAnalysisService는 AI 분석에만 집중하고,
- * UserPreference 저장 + 낙관적 락 재시도는 이 서비스가 전담합니다.
+ * [왜 self-injection이 필요한가?]
+ * @Transactional은 Spring AOP 프록시를 통해 동작합니다.
+ * 같은 클래스 내에서 this.doSingleAttempt()를 호출하면
+ * 프록시를 거치지 않아 @Transactional이 적용되지 않습니다.
+ * self를 @Autowired로 주입받으면 프록시를 통해 호출되어 @Transactional이 정상 동작합니다.
  *
- * [재시도 로직이 필요한 이유]
- * @Version 낙관적 락 충돌 시 OptimisticLockException이 발생합니다.
- * 이를 그대로 사용자에게 500 에러로 돌려주면 안 되므로,
- * 최대 MAX_RETRY 횟수만큼 재시도한 후 최종 실패 시 예외를 던집니다.
- *
- * [왜 saveAndFlush인가?]
- * save()는 트랜잭션 커밋 시점에 flush됩니다.
- * 재시도 루프 안에서는 즉시 DB에 반영해야 버전 충돌을 바로 감지할 수 있으므로
- * saveAndFlush()를 사용합니다.
+ * [왜 @Transactional을 분리했나?]
+ * OptimisticLockingFailureException 발생 시 현재 트랜잭션의
+ * JPA 영속성 컨텍스트(Persistence Context)가 오염됩니다.
+ * 같은 트랜잭션 안에서 재시도해도 오염된 컨텍스트를 재사용하므로 계속 실패합니다.
+ * doSingleAttempt()가 매번 새 트랜잭션을 열어 새 영속성 컨텍스트로 재시도합니다.
  */
 @Slf4j
 @Service
@@ -32,18 +32,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class PreferenceUpdateService {
 
     private final UserPreferenceRepository preferenceRepository;
-    private static final int MAX_RETRY = 3;
 
-    @Transactional
+    // @Lazy: 앱 시작 시점이 아닌 첫 호출 시점에 주입 → 순환 참조 해결
+    @Autowired
+    @Lazy
+    private PreferenceUpdateService self;
+
+    private static final int MAX_RETRY = 10;
+
+    // @Transactional 없음: 재시도 루프만 담당, 트랜잭션은 doSingleAttempt에서 각각 열림
     public void updateWithRetry(String keyword, int delta, User user) {
         int attempt = 0;
         while (attempt < MAX_RETRY) {
             try {
-                UserPreference pref = preferenceRepository.findByUserAndKeyword(user, keyword)
-                        .orElseGet(() -> new UserPreference(user, keyword, 0));
-                pref.updateScore(delta);
-                preferenceRepository.saveAndFlush(pref);
-                return; // 성공 시 즉시 반환
+                self.doSingleAttempt(keyword, delta, user); // 프록시를 통해 새 트랜잭션으로 호출
+                return;
             } catch (ObjectOptimisticLockingFailureException e) {
                 attempt++;
                 log.warn("낙관적 락 충돌 감지 - keyword: {}, 재시도 {}/{}", keyword, attempt, MAX_RETRY);
@@ -51,7 +54,22 @@ public class PreferenceUpdateService {
                     throw new RuntimeException(
                             "선호도 업데이트 실패: 동시 요청이 많습니다. 잠시 후 다시 시도해주세요.");
                 }
+                try {
+                    // 랜덤 딜레이: 스레드들이 동시에 재시도하지 않도록 분산
+                    Thread.sleep((long) (Math.random() * 50L * attempt));
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
             }
         }
+    }
+
+    // 매 호출마다 새 트랜잭션 → 새 영속성 컨텍스트 → 충돌 없이 최신 상태로 재시도
+    @Transactional
+    public void doSingleAttempt(String keyword, int delta, User user) {
+        UserPreference pref = preferenceRepository.findByUserAndKeyword(user, keyword)
+                .orElseGet(() -> new UserPreference(user, keyword, 0));
+        pref.updateScore(delta);
+        preferenceRepository.saveAndFlush(pref);
     }
 }
