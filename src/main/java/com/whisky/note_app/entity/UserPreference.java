@@ -36,6 +36,16 @@ public class UserPreference {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /**
+     * [낙관적 락 — Step 8]
+     *
+     * JPA가 UPDATE 시 자동으로 버전을 조건에 포함시킵니다.
+     * UPDATE user_preference SET score=?, version=? WHERE id=? AND version=?
+     * → 버전이 다르면 0 rows updated → OptimisticLockException 발생
+     */
+    @Version
+    private Long version;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
