@@ -2,8 +2,6 @@ package com.whisky.note_app.service;
 
 import com.whisky.note_app.dto.WhiskyAnalysisResult;
 import com.whisky.note_app.entity.User;
-import com.whisky.note_app.entity.UserPreference;
-import com.whisky.note_app.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -17,7 +15,7 @@ import java.util.List;
 public class WhiskyAnalysisService {
 
     private final ChatClient.Builder chatClientBuilder;
-    private final UserPreferenceRepository preferenceRepository;
+    private final PreferenceUpdateService preferenceUpdateService; // 저장 책임 위임
 
     @Transactional
     public WhiskyAnalysisResult analyzeAndSavePreference(String noteContent, Double rating, User user) {
@@ -56,11 +54,7 @@ public class WhiskyAnalysisService {
     private void updatePreferenceScores(List<String> keywords, int delta, User user) {
         if (keywords == null) return;
         for (String kw : keywords) {
-            // 해당 사용자의 키워드가 이미 있으면 점수 업데이트, 없으면 새로 생성
-            UserPreference pref = preferenceRepository.findByUserAndKeyword(user, kw)
-                    .orElseGet(() -> new UserPreference(user, kw, 0));
-            pref.updateScore(delta);
-            preferenceRepository.save(pref);
+            preferenceUpdateService.updateWithRetry(kw, delta, user);
         }
     }
 }
