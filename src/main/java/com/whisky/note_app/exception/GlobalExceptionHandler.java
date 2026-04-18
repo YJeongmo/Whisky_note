@@ -72,6 +72,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * [404 Not Found]
+     * 존재하지 않는 리소스 조회 시 NotFoundException을 처리합니다.
+     * 기존에 IllegalArgumentException(400)으로 처리하던 "없는 ID 조회"를 분리했습니다.
+     */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NotFoundException e) {
+        log.warn("[404 Not Found] {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ErrorResponse.of(404, e.getMessage()));
+    }
+
+    /**
      * [401 Unauthorized]
      * 로그인 실패 시 AuthService에서 던지는 UnauthorizedException을 처리합니다.
      */

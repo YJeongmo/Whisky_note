@@ -6,6 +6,7 @@ import com.whisky.note_app.dto.response.NoteResponse;
 import com.whisky.note_app.entity.MasterWhisky;
 import com.whisky.note_app.entity.TastingNote;
 import com.whisky.note_app.entity.User;
+import com.whisky.note_app.exception.NotFoundException;
 import com.whisky.note_app.repository.MasterWhiskyRepository;
 import com.whisky.note_app.repository.TastingNoteRepository;
 import lombok.RequiredArgsConstructor;
@@ -72,7 +73,7 @@ public class NoteServiceImpl implements NoteService {
     @Transactional(readOnly = true)
     public NoteResponse findNoteById(Long id, User user) {
         TastingNote note = noteRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 노트를 찾을 수 없습니다: " + id));
+                .orElseThrow(() -> new NotFoundException("해당 ID의 노트를 찾을 수 없습니다: " + id));
         return NoteResponse.from(note);
     }
 
@@ -116,7 +117,7 @@ public class NoteServiceImpl implements NoteService {
     public NoteResponse updateNote(Long id, UpdateNoteRequest request, User user) {
         // findByIdAndUser: 본인 노트인지 확인 후 수정
         TastingNote note = noteRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new IllegalArgumentException("해당 노트를 찾을 수 없습니다. id=" + id));
+                .orElseThrow(() -> new NotFoundException("해당 노트를 찾을 수 없습니다. id=" + id));
 
         if (request.getWhiskyName() != null) note.setWhiskyName(request.getWhiskyName());
         if (request.getCategory() != null) note.setCategory(request.getCategory());
@@ -134,7 +135,7 @@ public class NoteServiceImpl implements NoteService {
     public void deleteNote(Long id, User user) {
         // 본인 노트인지 확인 후 삭제
         TastingNote note = noteRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new IllegalArgumentException("해당 노트를 찾을 수 없습니다. id=" + id));
+                .orElseThrow(() -> new NotFoundException("해당 노트를 찾을 수 없습니다. id=" + id));
         noteRepository.delete(note);
     }
 }

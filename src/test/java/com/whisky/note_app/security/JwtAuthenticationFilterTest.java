@@ -2,6 +2,7 @@ package com.whisky.note_app.security;
 
 import com.whisky.note_app.config.SecurityConfig;
 import com.whisky.note_app.controller.NoteController;
+import com.whisky.note_app.security.JwtAuthenticationEntryPoint;
 import com.whisky.note_app.entity.User;
 import com.whisky.note_app.entity.UserRole;
 import com.whisky.note_app.service.CustomUserDetailsService;
@@ -41,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 3. 잘못된 토큰 → 필터에서 인증 설정 안 함 → .authenticated() 에 걸림 → 403 Forbidden
  */
 @WebMvcTest(NoteController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class})
 class JwtAuthenticationFilterTest {
 
     @Autowired
@@ -85,23 +86,21 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("JWT 토큰 없이 요청하면 403을 반환해야 한다")
-    void noToken_shouldReturn403() throws Exception {
-        // Authorization 헤더 없이 인증 필요 경로 접근 → 403
+    @DisplayName("JWT 토큰 없이 요청하면 401을 반환해야 한다")
+    void noToken_shouldReturn401() throws Exception {
+        // Authorization 헤더 없이 인증 필요 경로 접근 → 401 (AuthenticationEntryPoint)
         mockMvc.perform(get("/api/notes"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("유효하지 않은 JWT 토큰으로 요청하면 403을 반환해야 한다")
-    void invalidToken_shouldReturn403() throws Exception {
-        // given: JwtUtil이 false 반환 (만료/변조된 토큰)
+    @DisplayName("유효하지 않은 JWT 토큰으로 요청하면 401을 반환해야 한다")
+    void invalidToken_shouldReturn401() throws Exception {
         String invalidToken = "invalid.jwt.token";
         given(jwtUtil.validateToken(invalidToken)).willReturn(false);
 
-        // when & then
         mockMvc.perform(get("/api/notes")
                         .header("Authorization", "Bearer " + invalidToken))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

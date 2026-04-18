@@ -4,6 +4,7 @@ import com.whisky.note_app.dto.request.CreateNoteRequest;
 import com.whisky.note_app.dto.request.UpdateNoteRequest;
 import com.whisky.note_app.dto.response.NoteResponse;
 import com.whisky.note_app.entity.User;
+import com.whisky.note_app.exception.NotFoundException;
 import com.whisky.note_app.entity.UserRole;
 import com.whisky.note_app.repository.TastingNoteRepository;
 import com.whisky.note_app.repository.UserRepository;
@@ -138,7 +139,7 @@ class NoteServiceImplTest {
         updateRequest.setWhiskyName("해킹 시도");
 
         assertThatThrownBy(() -> noteService.updateNote(noteId, updateRequest, userB))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class);
     }
 
     @Test
@@ -166,6 +167,6 @@ class NoteServiceImplTest {
 
         // when & then: userB가 삭제 시도 → 예외
         assertThatThrownBy(() -> noteService.deleteNote(noteId, userB))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(NotFoundException.class);
     }
 }

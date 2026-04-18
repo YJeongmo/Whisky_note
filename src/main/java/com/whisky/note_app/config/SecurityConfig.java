@@ -1,5 +1,6 @@
 package com.whisky.note_app.config;
 
+import com.whisky.note_app.security.JwtAuthenticationEntryPoint;
 import com.whisky.note_app.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -42,6 +43,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -70,6 +72,11 @@ public class SecurityConfig {
                     "/swagger-ui.html"
                 ).permitAll()
                 .anyRequest().authenticated()                          // 나머지는 JWT 인증 필요
+            )
+
+            // 미인증 요청 → 403 대신 401 반환
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(jwtAuthenticationEntryPoint)
             )
 
             // JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 삽입

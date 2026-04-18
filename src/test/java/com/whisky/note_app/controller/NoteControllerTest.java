@@ -3,6 +3,7 @@ package com.whisky.note_app.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.whisky.note_app.config.SecurityConfig;
 import com.whisky.note_app.dto.request.CreateNoteRequest;
+import com.whisky.note_app.security.JwtAuthenticationEntryPoint;
 import com.whisky.note_app.dto.response.NoteResponse;
 import com.whisky.note_app.entity.User;
 import com.whisky.note_app.entity.UserRole;
@@ -45,7 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 매 테스트마다 동일한 "인증된 사용자" 셋업이 필요하므로 @BeforeEach로 분리합니다.
  */
 @WebMvcTest(NoteController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class})
 class NoteControllerTest {
 
     @Autowired
@@ -99,10 +100,10 @@ class NoteControllerTest {
     }
 
     @Test
-    @DisplayName("토큰 없이 노트 목록을 조회하면 403을 반환해야 한다")
-    void list_noToken_403() throws Exception {
+    @DisplayName("토큰 없이 노트 목록을 조회하면 401을 반환해야 한다")
+    void list_noToken_401() throws Exception {
         mockMvc.perform(get("/api/notes"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
