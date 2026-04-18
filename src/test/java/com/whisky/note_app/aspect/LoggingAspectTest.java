@@ -4,6 +4,7 @@ import com.whisky.note_app.dto.auth.LoginRequest;
 import com.whisky.note_app.dto.auth.LoginResponse;
 import com.whisky.note_app.exception.UnauthorizedException;
 import com.whisky.note_app.config.SecurityConfig;
+import com.whisky.note_app.security.JwtAuthenticationEntryPoint;
 import com.whisky.note_app.security.JwtAuthenticationFilter;
 import com.whisky.note_app.service.AuthService;
 import com.whisky.note_app.service.CustomUserDetailsService;
@@ -41,7 +42,7 @@ import com.whisky.note_app.controller.AuthController;
  * 명시적으로 Import해야 AOP가 실제로 적용된 환경을 테스트할 수 있습니다.
  */
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, LoggingAspect.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, LoggingAspect.class})
 class LoggingAspectTest {
 
     @Autowired

@@ -7,6 +7,7 @@ import com.whisky.note_app.dto.auth.SignUpRequest;
 import com.whisky.note_app.dto.auth.SignUpResponse;
 import com.whisky.note_app.config.SecurityConfig;
 import com.whisky.note_app.exception.UnauthorizedException;
+import com.whisky.note_app.security.JwtAuthenticationEntryPoint;
 import com.whisky.note_app.security.JwtAuthenticationFilter;
 import com.whisky.note_app.service.AuthService;
 import com.whisky.note_app.service.CustomUserDetailsService;
@@ -50,7 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * SecurityConfig에서 csrf().disable()을 했지만 테스트 환경에서는 명시적으로 처리합니다.
  */
 @WebMvcTest(AuthController.class)
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class})
 class AuthControllerTest {
 
     @Autowired
