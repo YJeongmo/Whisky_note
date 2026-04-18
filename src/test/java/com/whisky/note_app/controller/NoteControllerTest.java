@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -14,7 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat; // 검증(Assertion)�
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc // API 테스트를 위한 가상 브라우저 설정
+@AutoConfigureMockMvc // API 테스트를 위한 가상 브라우저 설정 (실제 서버 없이 HTTP 요청/응답 테스트)
+@ActiveProfiles("test") // H2 인메모리 DB 사용 (PostgreSQL 연결 없이 실행)
 class NoteControllerTest {
 
     @Autowired

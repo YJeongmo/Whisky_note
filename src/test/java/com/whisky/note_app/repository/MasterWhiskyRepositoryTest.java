@@ -7,13 +7,29 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * [@DataJpaTest]
+ * - JPA 관련 빈만 로드하는 슬라이스 테스트입니다. (@SpringBootTest보다 훨씬 빠릅니다)
+ * - JpaRepository, @Entity 등은 로드되지만 @Service, @Controller는 로드되지 않습니다.
+ *
+ * [@AutoConfigureTestDatabase(replace = NONE)]
+ * - 기본값은 내장 H2로 자동 교체(replace = ANY)입니다.
+ * - NONE으로 설정하면 application-test.yml에서 설정한 DB를 그대로 사용합니다.
+ * - @ActiveProfiles("test")와 함께 사용해 H2 설정을 application-test.yml에서 관리합니다.
+ *
+ * [@ActiveProfiles("test")]
+ * - application-test.yml을 활성화합니다.
+ * - 이 설정 없이는 application.yml (PostgreSQL)을 사용하려 해서 테스트가 실패합니다.
+ */
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 class MasterWhiskyRepositoryTest {
 
     @Autowired
@@ -21,21 +37,26 @@ class MasterWhiskyRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        // 테스트용 데이터 미리 저장
-        MasterWhisky m1 = new MasterWhisky();
-        m1.setWhiskyName("맥캘란 12년 쉐리");
-        m1.setDistillery("맥캘란");
-        m1.setCategory("싱글몰트 스카치");
-        m1.setSubCategory("쉐리 캐스크");
-        m1.setPriceRange("10만원대");
+        // [MasterWhisky.builder() 사용 이유]
+        // MasterWhisky에 @NoArgsConstructor(access = PROTECTED)가 적용되어
+        // new MasterWhisky()로는 생성할 수 없습니다.
+        // → @Builder 패턴으로만 생성 가능 (의도적인 설계: 불완전한 객체 생성 방지)
+        MasterWhisky m1 = MasterWhisky.builder()
+                .whiskyName("맥캘란 12년 쉐리")
+                .distillery("맥캘란")
+                .category("싱글몰트 스카치")
+                .subCategory("쉐리 캐스크")
+                .priceRange("10만원대")
+                .build();
         masterRepository.save(m1);
 
-        MasterWhisky m2 = new MasterWhisky();
-        m2.setWhiskyName("와일드 터키 101");
-        m2.setDistillery("와일드 터키");
-        m2.setCategory("버번");
-        m2.setSubCategory("버진 오크");
-        m2.setPriceRange("5만원대");
+        MasterWhisky m2 = MasterWhisky.builder()
+                .whiskyName("와일드 터키 101")
+                .distillery("와일드 터키")
+                .category("버번")
+                .subCategory("버진 오크")
+                .priceRange("5만원대")
+                .build();
         masterRepository.save(m2);
     }
 

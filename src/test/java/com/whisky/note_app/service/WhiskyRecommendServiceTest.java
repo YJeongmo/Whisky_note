@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -19,10 +18,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 
-
 @SpringBootTest
 @ActiveProfiles("test")
-@Transactional 
+@Transactional
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class WhiskyRecommendServiceTest {
 
@@ -37,21 +35,26 @@ class WhiskyRecommendServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 1. 테스트용 마스터 위스키 데이터 삽입
+        // [MasterWhisky.builder() 사용]
+        // @NoArgsConstructor(access = PROTECTED) → new MasterWhisky() 불가
+        // → 항상 builder()를 통해 생성
+
+        // 테스트용 마스터 위스키 데이터 삽입
+        // Nose, Palate, Finish 모두 같은 설명을 넣어 키워드 매칭을 단순화
         createMasterWhisky("피트", "아일라", "강렬한 피트 향과 소독약 맛, 긴 피니시", 150000);
         createMasterWhisky("바닐라", "스페이사이드", "부드러운 바닐라와 꿀, 과일향", 80000);
         createMasterWhisky("오크", "버번", "강한 오크향과 스파이시한 맛", 120000);
     }
 
     private void createMasterWhisky(String name, String cat, String desc, Integer price) {
-        MasterWhisky whisky = new MasterWhisky();
-        whisky.setWhiskyName(name);
-        whisky.setCategory(cat);
-        // 테스트 편의상 Nose/Palate/Finish에 동일한 설명을 넣어 검색
-        whisky.setNose(desc);
-        whisky.setPalate(desc);
-        whisky.setFinish(desc);
-        whisky.setPrice(price);
+        MasterWhisky whisky = MasterWhisky.builder()
+                .whiskyName(name)
+                .category(cat)
+                .nose(desc)
+                .palate(desc)
+                .finish(desc)
+                .price(price)
+                .build();
         masterWhiskyRepository.save(whisky);
     }
 
@@ -81,7 +84,7 @@ class WhiskyRecommendServiceTest {
         // when: 10만원 이하로 필터링
         List<MasterWhisky> results = recommendService.getPersonalizedRecommendations(100000);
 
-        // then: 8만원인 '달콤 바닐라'만 나와야 함
+        // then: 8만원인 '바닐라'만 나와야 함
         assertThat(results).hasSize(1);
         assertThat(results.get(0).getWhiskyName()).isEqualTo("바닐라");
     }
@@ -98,7 +101,7 @@ class WhiskyRecommendServiceTest {
 
         // then: 피트 대장이 1위여야 하고, 스파이시가 포함된 위스키는 점수가 낮아야 함
         assertThat(results.get(0).getWhiskyName()).isEqualTo("피트");
-        // 오크 스파이스는 점수가 마이너스라 리스트 하단에 있거나 점수가 낮음
+        // 오크에 "스파이시" 포함 → 점수가 마이너스라 리스트 하단
         boolean isOakLast = results.get(results.size()-1).getWhiskyName().equals("오크");
         assertThat(isOakLast).isTrue();
     }

@@ -1,11 +1,12 @@
 package com.whisky.note_app.repository;
 
-import com.whisky.note_app.domain.TastingNote;
+import com.whisky.note_app.entity.TastingNote; // entity 패키지 (domain이 아님)
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -14,6 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test") // application-test.yml 활성화 → H2 인메모리 DB 사용
 class TastingNoteRepositoryTest {
 
     @Autowired

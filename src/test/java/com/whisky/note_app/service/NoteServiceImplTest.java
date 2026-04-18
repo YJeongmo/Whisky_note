@@ -1,11 +1,14 @@
 package com.whisky.note_app.service;
 
+import com.whisky.note_app.dto.request.UpdateNoteRequest;
+import com.whisky.note_app.dto.response.NoteResponse;
+import com.whisky.note_app.entity.TastingNote; // entity 패키지
 import com.whisky.note_app.repository.TastingNoteRepository;
 import org.springframework.boot.test.context.SpringBootTest;
-import com.whisky.note_app.domain.TastingNote;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -14,13 +17,22 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * [@SpringBootTest + @Transactional]
+ * - @SpringBootTest: 전체 Spring 컨텍스트를 로드합니다 (Service, Repository 등 모두 포함)
+ * - @Transactional: 각 테스트가 끝나면 자동 롤백합니다 → 테스트 간 데이터 간섭 없음
+ * - @ActiveProfiles("test"): application-test.yml 활성화 → H2 인메모리 DB 사용
+ *
+ * [NoteServiceImpl 통합 테스트]
+ * 서비스 레이어가 Repository와 올바르게 협력하는지 검증합니다.
+ */
 @SpringBootTest
 @Transactional
+@ActiveProfiles("test")
 class NoteServiceImplTest {
 
     @Autowired NoteService noteService;
-    @Autowired
-    TastingNoteRepository noteRepository;
+    @Autowired TastingNoteRepository noteRepository;
 
     @Test
     @DisplayName("종료일(end)을 입력하지 않고 조회하면 내부적으로 오늘까지 포함해 조회한다")
@@ -32,7 +44,7 @@ class NoteServiceImplTest {
         noteRepository.save(note);
 
         // 2. When: 시작일(어제)만 있고 종료일은 null인 경우
-        List<TastingNote> result = noteService.findByPeriod(LocalDate.now().minusDays(1), LocalDate.now());
+        List<NoteResponse> result = noteService.findByPeriod(LocalDate.now().minusDays(1), LocalDate.now());
 
         // 3. Then
         assertThat(result).isNotEmpty();
@@ -46,10 +58,10 @@ class NoteServiceImplTest {
         oldNote.setWhiskyName("옛날 위스키");
         TastingNote savedNote = noteRepository.save(oldNote);
 
-        // When: 수정 데이터 생성 및 요청
-        TastingNote updateParam = new TastingNote();
-        updateParam.setWhiskyName("새로운 위스키");
-        noteService.updateNote(savedNote.getId(), updateParam);
+        // When: UpdateNoteRequest DTO로 수정 요청
+        UpdateNoteRequest updateRequest = new UpdateNoteRequest();
+        updateRequest.setWhiskyName("새로운 위스키");
+        noteService.updateNote(savedNote.getId(), updateRequest);
 
         // Then: 값이 바뀌었는지 확인
         TastingNote updated = noteRepository.findById(savedNote.getId()).get();

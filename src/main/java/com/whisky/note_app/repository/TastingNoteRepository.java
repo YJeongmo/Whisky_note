@@ -1,6 +1,6 @@
 package com.whisky.note_app.repository;
 
-import com.whisky.note_app.domain.TastingNote;
+import com.whisky.note_app.entity.TastingNote; // entity 패키지로 이동됨
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhiskyNote 프로젝트 설계도</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; }
+
+  header {
+    background: #1a1a2e; color: white;
+    padding: 32px 40px;
+  }
+  header h1 { font-size: 1.8rem; margin-bottom: 6px; }
+  header p  { color: #aaa; font-size: 0.95rem; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+  section { margin-bottom: 60px; }
+  h2 {
+    font-size: 1.4rem; color: #1a1a2e;
+    border-left: 4px solid #e94560; padding-left: 12px;
+    margin-bottom: 20px;
+  }
+  h3 { font-size: 1.05rem; color: #444; margin: 24px 0 10px; }
+
+  .diagram-box {
+    background: white; border-radius: 10px;
+    padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    overflow-x: auto;
+  }
+
+  /* 단계별 카드 */
+  .phases { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .phase-card {
+    background: white; border-radius: 10px;
+    padding: 22px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    border-top: 4px solid #ccc;
+  }
+  .phase-card.done  { border-color: #4caf50; }
+  .phase-card.next  { border-color: #e94560; }
+  .phase-card.later { border-color: #2196f3; }
+  .phase-card.extra { border-color: #ff9800; }
+
+  .phase-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .badge {
+    font-size: 0.72rem; font-weight: bold; padding: 3px 10px;
+    border-radius: 20px; white-space: nowrap;
+  }
+  .badge.done  { background: #e8f5e9; color: #388e3c; }
+  .badge.next  { background: #fce4ec; color: #c62828; }
+  .badge.later { background: #e3f2fd; color: #1565c0; }
+  .badge.extra { background: #fff3e0; color: #e65100; }
+
+  .phase-card h3 { font-size: 1rem; margin: 0; color: #1a1a2e; }
+
+  .change-list { list-style: none; margin-top: 10px; }
+  .change-list li {
+    font-size: 0.875rem; padding: 5px 0;
+    border-bottom: 1px solid #f0f0f0; color: #555;
+  }
+  .change-list li:last-child { border: none; }
+  .tag {
+    display: inline-block; font-size: 0.7rem; font-weight: bold;
+    padding: 1px 7px; border-radius: 4px; margin-right: 6px;
+  }
+  .tag.entity { background: #e8eaf6; color: #3949ab; }
+  .tag.new    { background: #e8f5e9; color: #2e7d32; }
+  .tag.mod    { background: #fff8e1; color: #f57f17; }
+  .tag.infra  { background: #fce4ec; color: #880e4f; }
+  .tag.why    { background: #f3e5f5; color: #6a1b9a; }
+
+  .why-box {
+    background: #f9f0ff; border-left: 3px solid #9c27b0;
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+    font-size: 0.85rem; color: #555; margin-top: 12px;
+  }
+
+  /* ERD 범례 */
+  .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #666; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot-current { background: #4caf50; }
+  .dot-new     { background: #e94560; }
+  .dot-modified { background: #ff9800; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🥃 WhiskyNote — 프로젝트 전체 설계도</h1>
+  <p>최종 목표 ERD · 클래스 구조 · 단계별 구현 계획</p>
+</header>
+
+<main>
+
+<!-- ───────────────── 1. ERD ───────────────── -->
+<section>
+  <h2>최종 목표 ERD (DB 구조)</h2>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot dot-current"></div> 현재 존재</div>
+    <div class="legend-item"><div class="legend-dot dot-new"></div> 신규 추가</div>
+    <div class="legend-item"><div class="legend-dot dot-modified"></div> 기존 컬럼 추가</div>
+  </div>
+
+  <div class="diagram-box">
+    <div class="mermaid">
+erDiagram
+
+    USER {
+        Long id PK "신규"
+        String email "신규 · UNIQUE"
+        String password "신규 · BCrypt 암호화"
+        String nickname "신규"
+        String role "신규 · USER / ADMIN"
+        LocalDateTime createdAt "신규"
+    }
+
+    TASTING_NOTE {
+        Long id PK
+        Long user_id FK "신규 · 작성자"
+        Long master_whisky_id FK "선택 · 마스터 연결"
+        String whiskyName
+        String category
+        String subCategory
+        String nose
+        String palate
+        String finish
+        Double rating
+        String imageUrl "이미지 업로드 후 경로 저장"
+        LocalDate createdAt
+    }
+
+    MASTER_WHISKY {
+        Long id PK
+        String whiskyName
+        String distillery
+        String category
+        String subCategory
+        String nose
+        String palate
+        String finish
+        Integer price
+        String priceRange
+        String imageUrl "신규 · 위스키 대표 이미지"
+    }
+
+    USER_PREFERENCE {
+        Long id PK
+        Long user_id FK "신규 · 유저별 분리"
+        String keyword
+        Integer score "-10 ~ 10"
+        Long version "신규 · 낙관적 락용"
+    }
+
+    USER ||--o{ TASTING_NOTE : "작성 (1:N)"
+    USER ||--o{ USER_PREFERENCE : "보유 (1:N)"
+    TASTING_NOTE }o--o| MASTER_WHISKY : "참조 선택 (N:0..1)"
+    </div>
+  </div>
+
+  <h3>핵심 관계 설명</h3>
+  <div class="diagram-box" style="margin-top:0; padding: 20px 24px;">
+    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+      <thead>
+        <tr style="background:#f5f5f5;">
+          <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">관계</th>
+          <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">설명</th>
+          <th style="padding:10px; text-align:left; border-bottom:2px solid #ddd;">왜 이렇게?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">User → TastingNote (1:N)</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">한 유저가 여러 노트 작성</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">노트 조회 시 본인 것만 보이도록 분리</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">User → UserPreference (1:N)</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">취향 키워드가 유저별로 따로 누적</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">지금은 전역이라 A·B 취향이 섞임. 분리 필수</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">TastingNote → MasterWhisky (N:0..1)</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">마스터DB에 있는 위스키면 연결, 없으면 null</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">마스터에 없는 위스키도 노트 작성 가능하게 선택적</td>
+        </tr>
+        <tr>
+          <td style="padding:10px;">UserPreference.version</td>
+          <td style="padding:10px;">낙관적 락을 위한 버전 컬럼</td>
+          <td style="padding:10px;">동시 요청 시 같은 키워드 점수를 두 스레드가 동시에 덮어쓰는 문제 방지</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ───────────────── 2. 클래스 구조 ───────────────── -->
+<section>
+  <h2>전체 클래스 구조 (레이어 다이어그램)</h2>
+  <div class="diagram-box">
+    <div class="mermaid">
+classDiagram
+    direction TB
+
+    class AuthController {
+        +register(RegisterRequest) ResponseEntity
+        +login(LoginRequest) TokenResponse
+        +refresh(String) TokenResponse
+    }
+    class NoteController {
+        +create(CreateNoteRequest) ResponseEntity
+        +list(name, category, subCategory) List
+        +getByPeriod(start, end) List
+        +update(id, UpdateNoteRequest) NoteResponse
+        +delete(id) ResponseEntity
+        +analyzeNote(id) ResponseEntity
+    }
+    class MasterWhiskyController {
+        +search(name, distillery, category, subCategory, priceRange, maxPrice) List
+        +getAll() List
+    }
+    class RecommendController {
+        +getRecommendations(maxPrice) List
+    }
+    class FileUploadController {
+        +uploadNoteImage(id, file) String
+        +uploadMasterImage(id, file) String
+    }
+
+    class AuthService {
+        +register(RegisterRequest) void
+        +login(LoginRequest) TokenResponse
+        -encodePassword(raw) String
+    }
+    class NoteService {
+        <<interface>>
+        +saveNote(CreateNoteRequest) Long
+        +findAllNotes() List
+        +updateNote(id, UpdateNoteRequest) NoteResponse
+        +deleteNote(id) void
+        +searchByWhiskyName(name) List
+        +findByPeriod(start, end) List
+    }
+    class NoteServiceImpl {
+        -noteRepository
+        -masterWhiskyRepository
+    }
+    class WhiskyAnalysisService {
+        +analyzeAndSavePreference(content, rating, userId) void
+        -updatePreferenceScores(keywords, delta, userId) void
+    }
+    class WhiskyRecommendService {
+        +getPersonalizedRecommendations(maxPrice, userId) List
+        -calculateMatchScore(whisky, preferences) double
+    }
+    class MasterWhiskySearchService {
+        +searchWhiskies(name, distillery, category, subCategory, priceRange) List
+        +getRecommendations(keywords) List
+    }
+    class FileUploadService {
+        +saveNoteImage(id, file) String
+        +saveMasterImage(id, file) String
+    }
+
+    class User {
+        +Long id
+        +String email
+        +String password
+        +String nickname
+        +String role
+        +LocalDateTime createdAt
+    }
+    class TastingNote {
+        +Long id
+        +User user
+        +MasterWhisky masterWhisky
+        +String whiskyName
+        +String nose, palate, finish
+        +Double rating
+        +String imageUrl
+        +LocalDate createdAt
+    }
+    class MasterWhisky {
+        +Long id
+        +String whiskyName
+        +String distillery
+        +String category, subCategory
+        +String nose, palate, finish
+        +Integer price
+        +String imageUrl
+    }
+    class UserPreference {
+        +Long id
+        +User user
+        +String keyword
+        +Integer score
+        +Long version
+    }
+
+    class JwtAuthenticationFilter {
+        +doFilterInternal()
+    }
+    class JwtTokenProvider {
+        +generateToken(email) String
+        +validateToken(token) boolean
+        +getEmail(token) String
+    }
+    class SecurityConfig {
+        +filterChain() SecurityFilterChain
+    }
+    class AsyncConfig {
+        +taskExecutor() Executor
+    }
+    class CacheConfig {
+        +cacheManager() CacheManager
+    }
+    class JpaAuditingConfig
+
+    AuthController --> AuthService
+    NoteController --> NoteService
+    NoteController --> WhiskyAnalysisService
+    RecommendController --> WhiskyRecommendService
+    MasterWhiskyController --> MasterWhiskySearchService
+    FileUploadController --> FileUploadService
+
+    NoteService <|.. NoteServiceImpl
+    NoteServiceImpl --> TastingNote
+    WhiskyAnalysisService --> UserPreference
+    WhiskyRecommendService --> UserPreference
+    WhiskyRecommendService --> MasterWhisky
+    FileUploadService --> TastingNote
+    FileUploadService --> MasterWhisky
+
+    JwtAuthenticationFilter --> JwtTokenProvider
+    SecurityConfig --> JwtAuthenticationFilter
+
+    TastingNote --> User
+    TastingNote --> MasterWhisky
+    UserPreference --> User
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────── 3. 단계별 계획 ───────────────── -->
+<section>
+  <h2>단계별 구현 계획 — 무엇이 왜 추가되는가</h2>
+  <div class="phases">
+
+    <!-- Phase 0 -->
+    <div class="phase-card done">
+      <div class="phase-header">
+        <span class="badge done">✅ Phase 0 · 완료</span>
+        <h3>기본 구조 정비</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag entity">완료</span>패키지 통일 (domain → entity)</li>
+        <li><span class="tag entity">완료</span>DTO 분리 (Request / Response)</li>
+        <li><span class="tag entity">완료</span>GlobalExceptionHandler</li>
+        <li><span class="tag entity">완료</span>TastingNote ↔ MasterWhisky @ManyToOne</li>
+        <li><span class="tag entity">완료</span>MasterWhisky @Builder 패턴</li>
+        <li><span class="tag entity">완료</span>DataInitializer → ApplicationRunner</li>
+        <li><span class="tag entity">완료</span>테스트 환경 수정 (H2, @ActiveProfiles)</li>
+      </ul>
+    </div>
+
+    <!-- Phase 1 -->
+    <div class="phase-card next">
+      <div class="phase-header">
+        <span class="badge next">🔜 Phase 1 · 다음</span>
+        <h3>회원 시스템 (Spring Security + JWT)</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag new">신규 엔티티</span>User (email, password, role)</li>
+        <li><span class="tag new">신규</span>AuthController (register, login)</li>
+        <li><span class="tag new">신규</span>JwtTokenProvider / JwtAuthFilter</li>
+        <li><span class="tag new">신규</span>SecurityConfig (공개/보호 URL 설정)</li>
+        <li><span class="tag mod">수정</span>TastingNote에 user_id FK 추가</li>
+        <li><span class="tag mod">수정</span>UserPreference에 user_id FK 추가</li>
+        <li><span class="tag mod">수정</span>모든 서비스에 현재 유저 필터링 추가</li>
+      </ul>
+      <div class="why-box">
+        <b>왜 가장 먼저?</b><br>
+        지금은 모든 노트·취향이 전역(누구 건지 모름). 회원이 없으면 이후 동시성·캐싱·추천 모두 의미 없음. 데이터 모델의 뼈대가 되는 단계.
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="phase-card later">
+      <div class="phase-header">
+        <span class="badge later">📌 Phase 2</span>
+        <h3>동시성 제어 (Optimistic Lock + 부하 테스트)</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag mod">수정</span>UserPreference에 @Version 컬럼 추가</li>
+        <li><span class="tag new">신규</span>OptimisticLockException 재시도 처리 (@Retryable)</li>
+        <li><span class="tag infra">도구</span>JMeter로 1,000 스레드 동시 요청 시나리오</li>
+        <li><span class="tag infra">측정</span>적용 전/후 처리 시간·데이터 정합성 비교</li>
+      </ul>
+      <div class="why-box">
+        <b>왜 이 시점에?</b><br>
+        회원 분리 후에야 "서로 다른 유저의 동시 요청"이 의미 있는 시나리오가 됨.
+        @Version 한 줄이지만 수치로 증명 가능해 자소서에 가장 강력한 항목.
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="phase-card later">
+      <div class="phase-header">
+        <span class="badge later">📌 Phase 3</span>
+        <h3>비동기 AI 분석 (@Async)</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag new">신규</span>AsyncConfig (ThreadPoolTaskExecutor 설정)</li>
+        <li><span class="tag mod">수정</span>WhiskyAnalysisService에 @Async 적용</li>
+        <li><span class="tag mod">수정</span>analyzeNote API → 202 Accepted 즉시 반환</li>
+        <li><span class="tag infra">측정</span>스레드 풀 크기별 처리량 비교</li>
+      </ul>
+      <div class="why-box">
+        <b>왜?</b><br>
+        Ollama 분석은 3~10초 소요. 지금은 AI가 끝날 때까지 요청이 블로킹됨.
+        비동기로 바꾸면 응답성 향상 + 스레드 자원 낭비 감소.
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="phase-card later">
+      <div class="phase-header">
+        <span class="badge later">📌 Phase 4</span>
+        <h3>Redis 캐싱 (추천 API 최적화)</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag infra">인프라</span>Redis 도입 (docker-compose로 로컬 실행)</li>
+        <li><span class="tag new">신규</span>CacheConfig 설정</li>
+        <li><span class="tag mod">수정</span>WhiskyRecommendService에 @Cacheable 적용</li>
+        <li><span class="tag mod">수정</span>취향 업데이트 시 @CacheEvict (캐시 무효화)</li>
+        <li><span class="tag infra">측정</span>캐시 적용 전/후 응답시간 비교</li>
+      </ul>
+      <div class="why-box">
+        <b>왜?</b><br>
+        추천 계산은 무겁지만 취향이 바뀌기 전까지 결과가 동일함.
+        Redis에 결과를 저장하면 DB 조회 없이 수 ms로 응답 가능.
+      </div>
+    </div>
+
+    <!-- Phase 5 -->
+    <div class="phase-card later">
+      <div class="phase-header">
+        <span class="badge later">📌 Phase 5</span>
+        <h3>검색 고도화 (QueryDSL)</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag infra">도입</span>QueryDSL 의존성 + QueryDslConfig</li>
+        <li><span class="tag mod">수정</span>MasterWhiskySearchService 동적 쿼리로 교체</li>
+        <li><span class="tag new">신규</span>복합 조건 검색 (카테고리 + 가격 + 향 키워드 동시 적용)</li>
+      </ul>
+      <div class="why-box">
+        <b>왜?</b><br>
+        지금은 조건 하나씩만 검색 가능. "스카치 + 10만원 이하 + 피트 향"
+        같은 복합 조건을 if 분기 없이 처리. 코드 유지보수성도 향상.
+      </div>
+    </div>
+
+    <!-- Phase 6 -->
+    <div class="phase-card extra">
+      <div class="phase-header">
+        <span class="badge extra">🖼 Phase 6</span>
+        <h3>이미지 업로드</h3>
+      </div>
+      <ul class="change-list">
+        <li><span class="tag new">신규</span>FileUploadController + FileUploadService</li>
+        <li><span class="tag mod">수정</span>MasterWhisky에 imageUrl 컬럼 추가</li>
+        <li><span class="tag infra">저장소</span>로컬 파일 저장 → 추후 S3 확장 고려</li>
+        <li><span class="tag new">신규</span>Multipart 파일 처리, 확장자 검증</li>
+      </ul>
+      <div class="why-box">
+        <b>왜?</b><br>
+        노트·위스키 카드 UI에 이미지 표시. S3 같은 외부 저장소 연동 구조로 설계하면
+        "파일 관리 경험"도 추가됨.
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ───────────────── 4. 기술 스택 요약 ───────────────── -->
+<section>
+  <h2>최종 기술 스택</h2>
+  <div class="diagram-box">
+    <table style="width:100%; border-collapse:collapse; font-size:0.875rem;">
+      <thead>
+        <tr style="background:#1a1a2e; color:white;">
+          <th style="padding:12px; text-align:left;">영역</th>
+          <th style="padding:12px; text-align:left;">기술</th>
+          <th style="padding:12px; text-align:left;">용도</th>
+          <th style="padding:12px; text-align:left;">단계</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px; border-bottom:1px solid #eee;">프레임워크</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Spring Boot 3.5</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">전체 서버</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">현재</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">ORM</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Spring Data JPA + Hibernate</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">DB 연동</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">현재</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px; border-bottom:1px solid #eee;">DB</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">PostgreSQL</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">메인 DB</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">현재</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">보안</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Spring Security + JWT</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">인증·인가</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 1</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px; border-bottom:1px solid #eee;">동시성</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">JPA Optimistic Lock (@Version)</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">동시 업데이트 충돌 방지</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 2</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">부하 테스트</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">JMeter</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">동시 요청 시뮬레이션</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 2</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px; border-bottom:1px solid #eee;">비동기</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">@Async + ThreadPoolTaskExecutor</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">AI 분석 논블로킹 처리</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 3</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">캐싱</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Redis + Spring Cache</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">추천 결과 캐싱</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 4</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px; border-bottom:1px solid #eee;">동적 쿼리</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">QueryDSL</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">복합 조건 검색</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 5</td>
+        </tr>
+        <tr>
+          <td style="padding:10px; border-bottom:1px solid #eee;">파일 저장</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Multipart → 로컬/S3</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">이미지 업로드</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">Phase 6</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="padding:10px;">AI</td>
+          <td style="padding:10px;">Spring AI + Ollama (llama3)</td>
+          <td style="padding:10px;">노트 분석·키워드 추출</td>
+          <td style="padding:10px;">현재</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'default', er: { diagramPadding: 20 } });
+</script>
+
+</body>
+</html>
