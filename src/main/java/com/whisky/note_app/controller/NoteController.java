@@ -145,7 +145,7 @@ public class NoteController {
         }
 
         try {
-            analysisService.analyzeAndSavePreference(combinedContent, note.getRating());
+            analysisService.analyzeAndSavePreference(combinedContent, note.getRating(), user);
             return ResponseEntity.ok("분석 완료! 당신의 취향 점수가 업데이트되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
