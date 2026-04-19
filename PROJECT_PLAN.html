@@ -368,9 +368,9 @@ classDiagram
     </div>
 
     <!-- Phase 1 -->
-    <div class="phase-card next">
+    <div class="phase-card done">
       <div class="phase-header">
-        <span class="badge next">🔜 Phase 1 · 다음</span>
+        <span class="badge done">✅ Phase 1 · 완료</span>
         <h3>회원 시스템 (Spring Security + JWT)</h3>
       </div>
       <ul class="change-list">
@@ -389,28 +389,30 @@ classDiagram
     </div>
 
     <!-- Phase 2 -->
-    <div class="phase-card later">
+    <div class="phase-card done">
       <div class="phase-header">
-        <span class="badge later">📌 Phase 2</span>
-        <h3>동시성 제어 (Optimistic Lock + 부하 테스트)</h3>
+        <span class="badge done">✅ Phase 2 · 완료</span>
+        <h3>동시성 제어 + 성능 최적화</h3>
       </div>
       <ul class="change-list">
-        <li><span class="tag mod">수정</span>UserPreference에 @Version 컬럼 추가</li>
-        <li><span class="tag new">신규</span>OptimisticLockException 재시도 처리 (@Retryable)</li>
-        <li><span class="tag infra">도구</span>JMeter로 1,000 스레드 동시 요청 시나리오</li>
-        <li><span class="tag infra">측정</span>적용 전/후 처리 시간·데이터 정합성 비교</li>
+        <li><span class="tag mod">수정</span>UserPreference에 @Version 낙관적 락 적용</li>
+        <li><span class="tag new">신규</span>PreferenceUpdateService — 최대 10회 재시도 + 랜덤 딜레이</li>
+        <li><span class="tag new">신규</span>@Lazy self-injection으로 순환 참조 + 트랜잭션 분리 해결</li>
+        <li><span class="tag infra">테스트</span>CountDownLatch + ExecutorService 동시성 검증</li>
+        <li><span class="tag mod">수정</span>키워드 저장 CompletableFuture 병렬화</li>
+        <li><span class="tag infra">측정</span>순차 46ms → 병렬 14ms (3.3배 단축, PostgreSQL 실환경)</li>
       </ul>
       <div class="why-box">
         <b>왜 이 시점에?</b><br>
-        회원 분리 후에야 "서로 다른 유저의 동시 요청"이 의미 있는 시나리오가 됨.
-        @Version 한 줄이지만 수치로 증명 가능해 자소서에 가장 강력한 항목.
+        회원 분리 후에야 "같은 유저의 동시 분석 요청"이 의미 있는 시나리오가 됨.
+        낙관적 락 + 재시도 + 병렬화까지 수치로 증명 가능해 포트폴리오 핵심 항목.
       </div>
     </div>
 
     <!-- Phase 3 -->
-    <div class="phase-card later">
+    <div class="phase-card next">
       <div class="phase-header">
-        <span class="badge later">📌 Phase 3</span>
+        <span class="badge next">🔜 Phase 3 · 다음</span>
         <h3>비동기 AI 분석 (@Async)</h3>
       </div>
       <ul class="change-list">
@@ -531,9 +533,9 @@ classDiagram
           <td style="padding:10px; border-bottom:1px solid #eee;">Phase 2</td>
         </tr>
         <tr>
-          <td style="padding:10px; border-bottom:1px solid #eee;">부하 테스트</td>
-          <td style="padding:10px; border-bottom:1px solid #eee;">JMeter</td>
-          <td style="padding:10px; border-bottom:1px solid #eee;">동시 요청 시뮬레이션</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">병렬 처리</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">CompletableFuture / CountDownLatch</td>
+          <td style="padding:10px; border-bottom:1px solid #eee;">키워드 병렬 저장 + 동시성 테스트</td>
           <td style="padding:10px; border-bottom:1px solid #eee;">Phase 2</td>
         </tr>
         <tr style="background:#f9f9f9;">
