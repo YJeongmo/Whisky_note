@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### 민감 정보 — GitHub 노출 금지 ###
+application-secret.properties

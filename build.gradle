@@ -34,7 +34,11 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'org.springframework.ai:spring-ai-ollama-spring-boot-starter'
+	// ── AI 모델 선택 ─────────────────────────────────────────────────────────
+	// 아래 두 줄 중 하나만 주석 해제하세요. 변경 후 반드시 재빌드 필요.
+	// implementation 'org.springframework.ai:spring-ai-ollama-spring-boot-starter' // [1] Ollama — 로컬 개발용 (현재 활성)
+	implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter' // [2] OpenAI — 배포용
+	// ─────────────────────────────────────────────────────────────────────────
 
 	testImplementation 'com.h2database:h2' // 테스트 전용
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
