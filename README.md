@@ -242,4 +242,78 @@ src/main/java/com/whisky/note_app/
 - **서버**: Railway
 - **DB**: Railway PostgreSQL
 - **Cache**: Upstash Redis
-- **API 문서**: 배포 후 URL 추가 예정
+- **배포 URL**: https://whiskynote-production.up.railway.app
+- **API 문서 (Swagger)**: https://whiskynote-production.up.railway.app/swagger-ui.html
+
+---
+
+## 🧭 API 사용 가이드
+
+> Swagger UI에서 직접 테스트하거나, 아래 순서대로 curl로 테스트할 수 있습니다.
+
+### Step 1 — 회원가입
+
+```bash
+curl -X POST https://whiskynote-production.up.railway.app/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com","password":"password123","nickname":"닉네임"}'
+```
+
+### Step 2 — 로그인 → JWT 토큰 발급
+
+```bash
+curl -X POST https://whiskynote-production.up.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"your@email.com","password":"password123"}'
+```
+
+응답에서 `token` 값을 복사해두세요. 이후 모든 요청에 사용합니다.
+
+### Step 3 — 테이스팅 노트 작성
+
+```bash
+curl -X POST https://whiskynote-production.up.railway.app/api/notes \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {JWT_TOKEN}" \
+  -d '{
+    "whiskyName": "맥캘란 12년",
+    "category": "스카치",
+    "subCategory": "셰리",
+    "nose": "달콤한 셰리, 바닐라, 건과일",
+    "palate": "리치, 오렌지 필, 다크초콜릿",
+    "finish": "긴 여운, 스파이시",
+    "rating": 4.5
+  }'
+```
+
+### Step 4 — AI 취향 분석 요청 (비동기, 202 즉시 반환)
+
+```bash
+curl -X POST https://whiskynote-production.up.railway.app/api/notes/{noteId}/analyze \
+  -H "Authorization: Bearer {JWT_TOKEN}"
+```
+
+### Step 5 — 취향 기반 개인화 추천 (Redis 캐싱)
+
+```bash
+curl https://whiskynote-production.up.railway.app/api/recommend \
+  -H "Authorization: Bearer {JWT_TOKEN}"
+
+# 가격 조건 포함
+curl "https://whiskynote-production.up.railway.app/api/recommend?maxPrice=100000" \
+  -H "Authorization: Bearer {JWT_TOKEN}"
+```
+
+### Step 6 — 위스키 복합 검색 (QueryDSL 7조건)
+
+```bash
+# 피트향 스카치 위스키 중 10만원 이하 검색
+curl "https://whiskynote-production.up.railway.app/api/master/search?category=스카치&flavorKeyword=피트&maxPrice=100000" \
+  -H "Authorization: Bearer {JWT_TOKEN}"
+```
+
+> 💡 **Swagger에서 더 편리하게 테스트하려면:**
+> 1. https://whiskynote-production.up.railway.app/swagger-ui.html 접속
+> 2. `/api/auth/login` 으로 로그인 후 토큰 복사
+> 3. 우측 상단 **Authorize** 버튼 클릭 → `Bearer {토큰}` 입력
+> 4. 이후 모든 API 자유롭게 테스트 가능
