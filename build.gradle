@@ -68,6 +68,14 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	// spring-boot-starter-cache: @Cacheable, @CacheEvict 등 캐시 추상화 레이어
 	implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+	// Phase 5: QueryDSL — 동적 쿼리 (Spring Boot 3.x / Jakarta EE 기준)
+	// querydsl-jpa: JPAQueryFactory 등 QueryDSL 핵심 라이브러리
+	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+	// querydsl-apt: 컴파일 시 Q클래스(QMasterWhisky 등) 자동 생성
+	annotationProcessor 'com.querydsl:querydsl-apt:5.0.0:jakarta'
+	annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+	annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 }
 
 dependencyManagement {

@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface MasterWhiskyRepository extends JpaRepository<MasterWhisky, Long> {
+public interface MasterWhiskyRepository extends JpaRepository<MasterWhisky, Long>, MasterWhiskyRepositoryCustom {
 
     boolean existsByWhiskyName(String whiskyName); // 기존 데이터 확인
 
