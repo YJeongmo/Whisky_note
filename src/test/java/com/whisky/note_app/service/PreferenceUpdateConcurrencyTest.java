@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * [테스트 케이스 구분]
  * Case 1. 레코드 존재 → UPDATE 동시 요청 → 낙관적 락 충돌 → 재시도로 모두 성공
- * Case 2. 레코드 없음 → INSERT 동시 요청 → 유니크 제약 충돌 → 1개만 성공, 나머지 실패
+ * Case 2. 레코드 없음 → INSERT 동시 요청 → 유니크 제약 충돌 → 1개만 INSERT 성공, 나머지 UPDATE 성공 or 실패
  *
  * Case 2는 오류가 아니라 의도된 동작입니다.
  * 같은 유저가 같은 키워드로 동시에 INSERT하는 상황은 현실에서 거의 발생하지 않으며,

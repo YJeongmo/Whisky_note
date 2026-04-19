@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -51,10 +52,28 @@ public class WhiskyAnalysisService {
         return result;
     }
 
+    /**
+     * [병렬 처리 — Phase 2 개선]
+     *
+     * [변경 전] 순차 처리
+     * for (String kw : keywords) { updateWithRetry(kw, delta, user); }
+     * → 키워드가 N개면 N * DB_시간 소요
+     *
+     * [변경 후] 병렬 처리
+     * CompletableFuture로 키워드를 동시에 저장
+     * → 키워드 간 의존성이 없으므로 병렬화 가능
+     * → 소요 시간 ≈ 키워드 1개 저장 시간 (커넥션 풀 범위 내)
+     *
+     * [allOf().join()]
+     * 모든 키워드 저장이 완료될 때까지 대기
+     * → 저장 완료 전에 메서드가 반환되는 것을 방지
+     */
     private void updatePreferenceScores(List<String> keywords, int delta, User user) {
         if (keywords == null) return;
-        for (String kw : keywords) {
-            preferenceUpdateService.updateWithRetry(kw, delta, user);
-        }
+        CompletableFuture<?>[] futures = keywords.stream()
+                .map(kw -> CompletableFuture.runAsync(
+                        () -> preferenceUpdateService.updateWithRetry(kw, delta, user)))
+                .toArray(CompletableFuture[]::new);
+        CompletableFuture.allOf(futures).join();
     }
 }
