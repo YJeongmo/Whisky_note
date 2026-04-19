@@ -37,7 +37,7 @@ import lombok.*;
 @Entity
 @Getter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor  // Redis 역직렬화(Jackson)를 위해 public 기본 생성자 필요
 @AllArgsConstructor
 public class MasterWhisky {
 

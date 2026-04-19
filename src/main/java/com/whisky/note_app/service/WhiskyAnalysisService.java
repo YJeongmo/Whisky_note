@@ -1,5 +1,6 @@
 package com.whisky.note_app.service;
 
+import com.whisky.note_app.config.CacheConfig;
 import com.whisky.note_app.dto.WhiskyAnalysisResult;
 import com.whisky.note_app.entity.User;
 import com.whisky.note_app.repository.UserRepository;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +41,18 @@ public class WhiskyAnalysisService {
     private final PreferenceUpdateService preferenceUpdateService;
     private final UserRepository userRepository;
 
+    /**
+     * [@CacheEvict — Step 17]
+     *
+     * AI 분석이 완료되면 해당 유저의 취향이 바뀌므로
+     * 기존에 캐싱된 추천 결과를 모두 삭제합니다.
+     * allEntries = true → 이 유저의 모든 maxPrice 조건 캐시를 한 번에 삭제
+     * (userId_null, userId_100000 등 maxPrice가 달라도 모두 무효화)
+     *
+     * 다음 추천 요청 때 @Cacheable이 DB에서 새로 계산 후 Redis에 저장합니다.
+     */
     @Async("analysisExecutor")
+    @CacheEvict(value = CacheConfig.RECOMMENDATIONS_CACHE, allEntries = true)
     public void analyzeAndSavePreference(String noteContent, Double rating, Long userId) {
         // 새 JPA 세션으로 User 재조회
         User user = userRepository.findById(userId)
