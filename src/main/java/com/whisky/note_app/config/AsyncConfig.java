@@ -1,5 +1,6 @@
 package com.whisky.note_app.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -29,12 +30,18 @@ import java.util.concurrent.Executor;
  * 요청 → 유휴 스레드 할당 → 없으면 큐 대기(최대 50)
  *      → 큐도 꽉 차면 maxPoolSize(10)까지 스레드 추가 생성
  *      → 그것도 꽉 차면 RejectedExecutionException
+ *
+ * [@ConditionalOnMissingBean]
+ * 같은 이름의 빈이 이미 등록되어 있으면 이 빈을 생성하지 않습니다.
+ * 테스트에서 TestAsyncConfig가 SyncTaskExecutor를 먼저 등록하면
+ * 이 빈은 건너뛰어 BeanDefinitionOverrideException을 방지합니다.
  */
 @Configuration
 @EnableAsync
 public class AsyncConfig {
 
     @Bean(name = "analysisExecutor")
+    @ConditionalOnMissingBean(name = "analysisExecutor")
     public Executor analysisExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(5);       // 평상시 5개 스레드 유지

@@ -14,4 +14,7 @@ public interface UserPreferenceRepository extends JpaRepository<UserPreference, 
 
     // 특정 사용자의 상위 선호 키워드 (점수 높은 순)
     List<UserPreference> findTop5ByUserOrderByScoreDesc(User user);
+
+    // 특정 사용자의 전체 선호도 조회 (테스트 데이터 정리용)
+    List<UserPreference> findAllByUser(User user);
 }

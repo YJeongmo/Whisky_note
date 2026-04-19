@@ -129,12 +129,17 @@ public class NoteController {
 
     /**
      * [POST /api/notes/{id}/analyze] AI 취향 분석
-     * Phase 3 (@Async) 적용 전까지는 동기 방식으로 동작합니다.
+     *
+     * [Phase 3 변경 — @Async 적용]
+     * analyzeAndSavePreference()가 비동기로 실행되므로
+     * AI 분석 완료를 기다리지 않고 202 Accepted를 즉시 반환합니다.
+     * 분석은 백그라운드(analysis- 스레드 풀)에서 진행됩니다.
      */
+    @Operation(summary = "노트 AI 분석", description = "노트를 AI로 분석하여 취향 점수를 업데이트합니다. 분석은 백그라운드에서 진행됩니다.")
     @PostMapping("/{id}/analyze")
     public ResponseEntity<String> analyzeNote(
             @PathVariable(name = "id") Long id,
-            @AuthenticationPrincipal User user) {
+            @Parameter(hidden = true) @AuthenticationPrincipal User user) {
         NoteResponse note = noteService.findNoteById(id, user);
 
         String combinedContent = String.format("향(Nose): %s, 맛(Palate): %s, 여운(Finish): %s",
@@ -144,11 +149,8 @@ public class NoteController {
             return ResponseEntity.badRequest().body("노트 내용이 너무 짧아 분석할 수 없습니다.");
         }
 
-        try {
-            analysisService.analyzeAndSavePreference(combinedContent, note.getRating(), user);
-            return ResponseEntity.ok("분석 완료! 당신의 취향 점수가 업데이트되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("분석 중 오류 발생: " + e.getMessage());
-        }
+        // 비동기 실행 — userId만 넘겨 JPA 세션 문제 방지
+        analysisService.analyzeAndSavePreference(combinedContent, note.getRating(), user.getId());
+        return ResponseEntity.accepted().body("분석 요청이 접수되었습니다. 잠시 후 취향 점수가 업데이트됩니다.");
     }
 }

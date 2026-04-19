@@ -40,6 +40,8 @@ class PreferenceUpdateBenchmarkTest {
     @Autowired private UserPreferenceRepository preferenceRepository;
     @Autowired private UserRepository userRepository;
 
+    private static final String BENCHMARK_EMAIL = "benchmark@test.com";
+
     private static final int KEYWORD_COUNT = 20;
     private static final int REPEAT = 5; // 5회 반복 후 평균
 
@@ -54,11 +56,14 @@ class PreferenceUpdateBenchmarkTest {
 
     @BeforeEach
     void setUp() {
-        preferenceRepository.deleteAll();
-        userRepository.deleteAll();
+        // 이전 테스트 데이터만 정리 (실제 앱 데이터 보호)
+        userRepository.findByEmail(BENCHMARK_EMAIL).ifPresent(u -> {
+            preferenceRepository.deleteAll(preferenceRepository.findAllByUser(u));
+            userRepository.delete(u);
+        });
 
         testUser = userRepository.save(User.builder()
-                .email("benchmark@test.com")
+                .email(BENCHMARK_EMAIL)
                 .password("pw")
                 .nickname("벤치유저")
                 .role(UserRole.USER)
@@ -67,8 +72,9 @@ class PreferenceUpdateBenchmarkTest {
 
     @AfterEach
     void tearDown() {
-        preferenceRepository.deleteAll();
-        userRepository.deleteAll();
+        // 테스트 유저의 데이터만 정리
+        preferenceRepository.deleteAll(preferenceRepository.findAllByUser(testUser));
+        userRepository.delete(testUser);
     }
 
     @Test
