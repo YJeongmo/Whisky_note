@@ -5,7 +5,7 @@
 
 ---
 
-## 📌 주요 기술 포인트
+## 주요 기술 포인트
 
 | 기술 | 적용 내용 | 수치 |
 |------|---------|------|
@@ -18,7 +18,7 @@
 
 ---
 
-## 🛠 기술 스택
+## 기술 스택
 
 | 영역 | 기술 |
 |------|------|
@@ -35,7 +35,7 @@
 
 ---
 
-## 📊 ERD
+## ERD
 
 ```
 ┌──────────────────┐       ┌──────────────────────┐
@@ -69,7 +69,7 @@
 
 ---
 
-## 📡 API 명세
+## API 명세
 
 ### 인증 (`/api/auth`) — 인증 불필요
 
@@ -125,7 +125,7 @@
 
 ---
 
-## 🏗 아키텍처 흐름
+## 아키텍처 흐름
 
 ```
 클라이언트
@@ -152,7 +152,7 @@ Controller
 
 ---
 
-## ⚙️ 로컬 실행 방법
+## ⚙로컬 실행 방법
 
 ### 사전 요구사항
 - Java 21
@@ -188,7 +188,7 @@ http://localhost:8080/swagger-ui.html
 
 ---
 
-## 🔄 AI 모델 교체 방법
+## AI 모델 교체 방법
 
 Spring AI `ChatClient` 추상화를 사용하여 **코드 변경 없이** 설정만으로 AI 모델을 교체할 수 있습니다.
 
@@ -206,7 +206,7 @@ implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
 
 ---
 
-## 🧪 테스트
+## 테스트
 
 ```bash
 ./gradlew test
@@ -220,7 +220,7 @@ implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter'
 
 ---
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
 ```
 src/main/java/com/whisky/note_app/
@@ -237,7 +237,7 @@ src/main/java/com/whisky/note_app/
 
 ---
 
-## 🚀 배포
+## 배포
 
 - **서버**: Railway
 - **DB**: Railway PostgreSQL
@@ -247,7 +247,7 @@ src/main/java/com/whisky/note_app/
 
 ---
 
-## 🧭 API 사용 가이드
+## API 사용 가이드
 
 > Swagger UI에서 직접 테스트하거나, 아래 순서대로 curl로 테스트할 수 있습니다.
 
@@ -312,7 +312,7 @@ curl "https://whiskynote-production.up.railway.app/api/master/search?category=�
   -H "Authorization: Bearer {JWT_TOKEN}"
 ```
 
-> 💡 **Swagger에서 더 편리하게 테스트하려면:**
+>  **Swagger에서 더 편리하게 테스트하려면:**
 > 1. https://whiskynote-production.up.railway.app/swagger-ui.html 접속
 > 2. `/api/auth/login` 으로 로그인 후 토큰 복사
 > 3. 우측 상단 **Authorize** 버튼 클릭 → `Bearer {토큰}` 입력
