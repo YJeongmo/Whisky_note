@@ -5,20 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 /**
- * [UserPreference — Step 7 변경]
- *
- * [변경 전]
- * keyword에 단독 unique 제약 → 앱 전체에서 키워드가 유일해야 함
- * → 사용자 A의 "피트"와 사용자 B의 "피트"가 공존 불가능 (잘못된 설계)
- *
- * [변경 후]
- * (user_id, keyword) 복합 유니크 제약
- * → 같은 사용자 안에서만 키워드가 유일하면 됨
- * → 사용자마다 독립적인 선호도 데이터를 가짐
- *
- * [@Table uniqueConstraints]
- * @Column(unique = true)는 단일 컬럼 유니크만 가능합니다.
- * 복합 유니크는 @Table 레벨에서 uniqueConstraints로 정의합니다.
+ * 사용자별 향미 키워드 선호도 엔티티입니다.
+ * (user_id, keyword) 복합 유니크 — 같은 사용자 안에서만 키워드가 유일합니다.
+ * 낙관적 락(@Version)으로 동시 업데이트 충돌을 감지합니다.
  */
 @Entity
 @Getter
@@ -36,13 +25,6 @@ public class UserPreference {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * [낙관적 락 — Step 8]
-     *
-     * JPA가 UPDATE 시 자동으로 버전을 조건에 포함시킵니다.
-     * UPDATE user_preference SET score=?, version=? WHERE id=? AND version=?
-     * → 버전이 다르면 0 rows updated → OptimisticLockException 발생
-     */
     @Version
     private Long version;
 
@@ -51,7 +33,7 @@ public class UserPreference {
     private User user;
 
     @Column(nullable = false)
-    private String keyword; // 예: "피트", "바닐라"
+    private String keyword;
 
     private int score; // -10 ~ 10
 

@@ -16,21 +16,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * [WhiskyAnalysisService — Step 12 변경]
+ * 노트 내용을 AI로 분석하여 취향 키워드를 추출하고 선호도 점수를 갱신합니다.
  *
- * [@Async 적용]
- * analyzeAndSavePreference()가 별도 스레드(analysisExecutor)에서 실행됩니다.
- * 호출 즉시 반환되어 API가 블로킹되지 않습니다.
- *
- * [@Transactional 제거 이유]
- * @Async는 별도 스레드에서 실행되므로 호출자의 트랜잭션을 이어받을 수 없습니다.
- * 실제 DB 저장은 PreferenceUpdateService.doSingleAttempt()의 @Transactional이 처리합니다.
- *
- * [왜 User 엔티티 대신 userId를 받는가?]
- * @Async 메서드는 별도 스레드에서 실행됩니다.
- * HTTP 요청 스레드의 JPA 세션은 요청이 끝나면 닫히는데,
- * User 엔티티를 그대로 넘기면 async 스레드에서 Lazy Loading 시 세션이 없어 오류가 납니다.
- * userId만 넘기고 async 메서드 안에서 새 JPA 세션으로 다시 조회합니다.
+ * userId를 파라미터로 받는 이유: @Async는 별도 스레드에서 실행되므로 호출자의 JPA 세션이 닫힌 후
+ * User 엔티티를 사용하면 LazyInitializationException이 발생합니다. 메서드 내부에서 재조회합니다.
  */
 @Slf4j
 @Service
@@ -42,19 +31,11 @@ public class WhiskyAnalysisService {
     private final UserRepository userRepository;
 
     /**
-     * [@CacheEvict — Step 17]
-     *
-     * AI 분석이 완료되면 해당 유저의 취향이 바뀌므로
-     * 기존에 캐싱된 추천 결과를 모두 삭제합니다.
-     * allEntries = true → 이 유저의 모든 maxPrice 조건 캐시를 한 번에 삭제
-     * (userId_null, userId_100000 등 maxPrice가 달라도 모두 무효화)
-     *
-     * 다음 추천 요청 때 @Cacheable이 DB에서 새로 계산 후 Redis에 저장합니다.
+     * AI 분석 완료 후 해당 유저의 추천 캐시를 전체 무효화합니다.
      */
     @Async("analysisExecutor")
     @CacheEvict(value = CacheConfig.RECOMMENDATIONS_CACHE, allEntries = true)
     public void analyzeAndSavePreference(String noteContent, Double rating, Long userId) {
-        // 새 JPA 세션으로 User 재조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("유저를 찾을 수 없습니다: " + userId));
 
@@ -93,9 +74,7 @@ public class WhiskyAnalysisService {
     }
 
     /**
-     * [병렬 처리 — Phase 2 개선]
-     * 키워드 간 의존성이 없으므로 CompletableFuture로 병렬 저장
-     * 순차 46ms → 병렬 14ms (3.3배 단축)
+     * 키워드 간 의존성이 없으므로 CompletableFuture로 병렬 처리합니다.
      */
     private void updatePreferenceScores(List<String> keywords, int delta, User user) {
         if (keywords == null) return;

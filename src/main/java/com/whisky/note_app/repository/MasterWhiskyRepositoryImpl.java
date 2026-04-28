@@ -10,19 +10,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * [MasterWhiskyRepositoryImpl — Step 19]
- *
- * QueryDSL을 사용한 동적 쿼리 구현체입니다.
- *
- * [Q클래스란?]
- * QueryDSL이 컴파일 시 엔티티를 분석해 자동 생성하는 메타 클래스입니다.
- * QMasterWhisky.masterWhisky.whiskyName 같은 방식으로 필드를 타입 안전하게 참조합니다.
- * 오타가 있으면 런타임이 아닌 컴파일 시점에 오류가 발생합니다.
- *
- * [BooleanExpression이란?]
- * QueryDSL의 WHERE 조건을 나타내는 타입입니다.
- * null을 반환하면 해당 조건이 쿼리에서 자동으로 제외됩니다.
- * 이 특성을 이용해 null인 파라미터는 조건에서 빠지는 동적 쿼리를 만들 수 있습니다.
+ * QueryDSL을 사용한 동적 복합 검색 구현체입니다.
+ * 각 조건 메서드는 파라미터가 null이면 null을 반환하며, QueryDSL이 해당 조건을 자동으로 제외합니다.
  */
 @Repository
 @RequiredArgsConstructor
@@ -56,37 +45,32 @@ public class MasterWhiskyRepositoryImpl implements MasterWhiskyRepositoryCustom 
                 .fetch();
     }
 
-    // 이름 부분 일치 — null이면 조건 제외
     private BooleanExpression nameLike(String name) {
         return (name != null && !name.isBlank()) ? mw.whiskyName.containsIgnoreCase(name) : null;
     }
 
-    // 증류소 부분 일치
     private BooleanExpression distilleryLike(String distillery) {
         return (distillery != null && !distillery.isBlank()) ? mw.distillery.containsIgnoreCase(distillery) : null;
     }
 
-    // 대분류 완전 일치
     private BooleanExpression categoryEq(String category) {
         return (category != null && !category.isBlank()) ? mw.category.eq(category) : null;
     }
 
-    // 소분류 부분 일치
     private BooleanExpression subCategoryLike(String subCategory) {
         return (subCategory != null && !subCategory.isBlank()) ? mw.subCategory.containsIgnoreCase(subCategory) : null;
     }
 
-    // 가격대 완전 일치 (예: "10만원대")
     private BooleanExpression priceRangeEq(String priceRange) {
         return (priceRange != null && !priceRange.isBlank()) ? mw.priceRange.eq(priceRange) : null;
     }
 
-    // 최대 가격 이하 (loe = less or equal)
+    // loe = less or equal
     private BooleanExpression maxPriceLoe(Integer maxPrice) {
         return maxPrice != null ? mw.price.loe(maxPrice) : null;
     }
 
-    // 향미 키워드 — nose, palate, finish 통합 검색
+    // nose, palate, finish 통합 검색
     private BooleanExpression flavorContains(String flavorKeyword) {
         if (flavorKeyword == null || flavorKeyword.isBlank()) return null;
         return mw.nose.containsIgnoreCase(flavorKeyword)

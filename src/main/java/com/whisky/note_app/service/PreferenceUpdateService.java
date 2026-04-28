@@ -12,19 +12,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * [PreferenceUpdateService — Step 9 개선]
+ * 낙관적 락 충돌 시 재시도 로직을 담당합니다.
  *
- * [왜 self-injection이 필요한가?]
- * @Transactional은 Spring AOP 프록시를 통해 동작합니다.
- * 같은 클래스 내에서 this.doSingleAttempt()를 호출하면
- * 프록시를 거치지 않아 @Transactional이 적용되지 않습니다.
- * self를 @Autowired로 주입받으면 프록시를 통해 호출되어 @Transactional이 정상 동작합니다.
- *
- * [왜 @Transactional을 분리했나?]
- * OptimisticLockingFailureException 발생 시 현재 트랜잭션의
- * JPA 영속성 컨텍스트(Persistence Context)가 오염됩니다.
- * 같은 트랜잭션 안에서 재시도해도 오염된 컨텍스트를 재사용하므로 계속 실패합니다.
- * doSingleAttempt()가 매번 새 트랜잭션을 열어 새 영속성 컨텍스트로 재시도합니다.
+ * self-injection 사용 이유: @Transactional은 AOP 프록시를 통해서만 동작하므로,
+ * 같은 클래스 내부 호출로는 트랜잭션이 적용되지 않습니다.
+ * self 참조를 통해 프록시를 경유하여 doSingleAttempt()마다 독립적인 트랜잭션을 엽니다.
  */
 @Slf4j
 @Service
@@ -33,19 +25,18 @@ public class PreferenceUpdateService {
 
     private final UserPreferenceRepository preferenceRepository;
 
-    // @Lazy: 앱 시작 시점이 아닌 첫 호출 시점에 주입 → 순환 참조 해결
+    // @Lazy: 순환 참조 방지를 위해 첫 호출 시점에 주입
     @Autowired
     @Lazy
     private PreferenceUpdateService self;
 
     private static final int MAX_RETRY = 10;
 
-    // @Transactional 없음: 재시도 루프만 담당, 트랜잭션은 doSingleAttempt에서 각각 열림
     public void updateWithRetry(String keyword, int delta, User user) {
         int attempt = 0;
         while (attempt < MAX_RETRY) {
             try {
-                self.doSingleAttempt(keyword, delta, user); // 프록시를 통해 새 트랜잭션으로 호출
+                self.doSingleAttempt(keyword, delta, user);
                 return;
             } catch (ObjectOptimisticLockingFailureException e) {
                 attempt++;
@@ -55,7 +46,6 @@ public class PreferenceUpdateService {
                             "선호도 업데이트 실패: 동시 요청이 많습니다. 잠시 후 다시 시도해주세요.");
                 }
                 try {
-                    // 랜덤 딜레이: 스레드들이 동시에 재시도하지 않도록 분산
                     Thread.sleep((long) (Math.random() * 50L * attempt));
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
@@ -64,7 +54,7 @@ public class PreferenceUpdateService {
         }
     }
 
-    // 매 호출마다 새 트랜잭션 → 새 영속성 컨텍스트 → 충돌 없이 최신 상태로 재시도
+    // 매 호출마다 새 트랜잭션 — 이전 충돌로 오염된 영속성 컨텍스트를 재사용하지 않기 위함
     @Transactional
     public void doSingleAttempt(String keyword, int delta, User user) {
         UserPreference pref = preferenceRepository.findByUserAndKeyword(user, keyword)

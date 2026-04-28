@@ -17,17 +17,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * [서비스 구현체: NoteServiceImpl — Step 6 변경]
- *
- * 모든 메서드에 User 파라미터가 추가되었습니다.
- * Repository 조회 시 user 조건을 함께 넘겨 "본인 노트만" 접근하도록 강제합니다.
- *
- * [데이터 격리 원칙]
- * 서비스 레이어에서 user 파라미터를 받아 Repository에 전달합니다.
- * 이렇게 하면 다른 사용자의 노트 ID를 직접 요청해도 "찾을 수 없습니다" 처리가 됩니다.
- * (DB에 데이터가 있어도 user 조건 불일치로 Optional.empty() 반환)
- */
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -48,7 +37,7 @@ public class NoteServiceImpl implements NoteService {
         note.setFinish(request.getFinish());
         note.setRating(request.getRating());
         note.setImageUrl(request.getImageUrl());
-        note.setUser(user); // 작성자 설정
+        note.setUser(user);
 
         if (request.getMasterWhiskyId() != null) {
             MasterWhisky master = masterWhiskyRepository.findById(request.getMasterWhiskyId())
@@ -115,7 +104,6 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public NoteResponse updateNote(Long id, UpdateNoteRequest request, User user) {
-        // findByIdAndUser: 본인 노트인지 확인 후 수정
         TastingNote note = noteRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new NotFoundException("해당 노트를 찾을 수 없습니다. id=" + id));
 
@@ -133,7 +121,6 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public void deleteNote(Long id, User user) {
-        // 본인 노트인지 확인 후 삭제
         TastingNote note = noteRepository.findByIdAndUser(id, user)
                 .orElseThrow(() -> new NotFoundException("해당 노트를 찾을 수 없습니다. id=" + id));
         noteRepository.delete(note);

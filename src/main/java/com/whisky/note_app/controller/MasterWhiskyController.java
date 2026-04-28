@@ -12,16 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-/**
- * [MasterWhiskyController — Step 19 변경]
- *
- * maxPrice, flavorKeyword 파라미터 추가
- * 모든 조건을 동시에 적용하는 복합 검색 지원
- *
- * 예시:
- *   GET /api/master/search?category=스카치&maxPrice=100000&flavorKeyword=피트
- *   → 스카치 위스키 중 10만원 이하 + 피트 향 포함
- */
 @Tag(name = "Master Whisky", description = "위스키 마스터 데이터 검색 API")
 @RestController
 @RequestMapping("/api/master")

@@ -18,19 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * [AuthController — 인증 API]
- *
- * [경로: /api/auth]
- * 인증 관련 API를 /api/auth 하위로 모읍니다.
- * Step 5 Security 설정에서 /api/auth/** 는 인증 없이 접근 가능하도록 열어둘 예정입니다.
- *
- * 현재 구현된 API:
- * - POST /api/auth/signup  : 회원가입
- *
- * Step 4에서 추가될 API:
- * - POST /api/auth/login   : 로그인 (JWT 발급)
- */
 @Tag(name = "Auth", description = "회원가입 / 로그인 API")
 @RestController
 @RequestMapping("/api/auth")

@@ -13,12 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * [UserController — 사용자 정보 API]
- *
- * 현재 로그인한 사용자의 정보를 반환합니다.
- * 프론트엔드에서 로그인 직후 닉네임, 이메일 등을 표시할 때 호출합니다.
- */
 @Tag(name = "User", description = "사용자 정보 API — JWT 인증 필요")
 @RestController
 @RequestMapping("/api/users")

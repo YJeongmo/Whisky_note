@@ -22,22 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * [컨트롤러: NoteController — Step 6 변경]
- *
- * [@AuthenticationPrincipal]
- * Spring Security가 SecurityContext에 저장한 UserDetails 객체를 파라미터로 바로 주입합니다.
- * User 엔티티가 UserDetails를 구현하고 있으므로 User 타입으로 바로 받을 수 있습니다.
- *
- * 사용 전:
- *   SecurityContextHolder.getContext().getAuthentication().getPrincipal() — 매번 직접 꺼내야 함
- * 사용 후:
- *   @AuthenticationPrincipal User user — Spring이 자동으로 주입
- *
- * [데이터 격리]
- * 모든 노트 관련 API에서 현재 로그인한 user를 서비스에 전달합니다.
- * 서비스 → Repository 에서 user 조건이 추가되어 본인 노트만 접근 가능합니다.
- */
 @Tag(name = "Notes", description = "테이스팅 노트 CRUD API — JWT 인증 필요")
 @RestController
 @RequestMapping("/api/notes")
@@ -128,12 +112,8 @@ public class NoteController {
     }
 
     /**
-     * [POST /api/notes/{id}/analyze] AI 취향 분석
-     *
-     * [Phase 3 변경 — @Async 적용]
-     * analyzeAndSavePreference()가 비동기로 실행되므로
-     * AI 분석 완료를 기다리지 않고 202 Accepted를 즉시 반환합니다.
-     * 분석은 백그라운드(analysis- 스레드 풀)에서 진행됩니다.
+     * 노트 내용을 AI로 분석하여 취향 점수를 업데이트합니다.
+     * 분석은 백그라운드에서 비동기 실행되며, 202 Accepted를 즉시 반환합니다.
      */
     @Operation(summary = "노트 AI 분석", description = "노트를 AI로 분석하여 취향 점수를 업데이트합니다. 분석은 백그라운드에서 진행됩니다.")
     @PostMapping("/{id}/analyze")
@@ -149,7 +129,7 @@ public class NoteController {
             return ResponseEntity.badRequest().body("노트 내용이 너무 짧아 분석할 수 없습니다.");
         }
 
-        // 비동기 실행 — userId만 넘겨 JPA 세션 문제 방지
+        // userId만 전달 — async 스레드에서 JPA 세션 분리를 위해 엔티티 직접 전달 금지
         analysisService.analyzeAndSavePreference(combinedContent, note.getRating(), user.getId());
         return ResponseEntity.accepted().body("분석 요청이 접수되었습니다. 잠시 후 취향 점수가 업데이트됩니다.");
     }

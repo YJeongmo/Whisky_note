@@ -14,29 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-/**
- * [Spring Security 설정: SecurityConfig — Step 5 완성]
- *
- * [전체 인증/인가 흐름]
- * HTTP 요청
- *   → JwtAuthenticationFilter (토큰 파싱 → SecurityContext 저장)
- *   → UsernamePasswordAuthenticationFilter (건너뜀 — 비활성화 상태)
- *   → Controller
- *   → (인증 필요 경로인데 토큰 없으면 403 Forbidden)
- *
- * [SessionCreationPolicy.STATELESS]
- * JWT는 서버가 세션을 유지할 필요 없습니다.
- * STATELESS로 설정하면 Spring Security가 HttpSession을 생성하지 않습니다.
- * 수평 확장(Scale-out)에 유리합니다.
- *
- * [경로별 인가 규칙]
- * - /api/auth/**  : 인증 없이 접근 가능 (회원가입, 로그인)
- * - 나머지        : 인증 필요 (유효한 JWT 토큰 있어야 함)
- *
- * [CORS 설정]
- * 프론트엔드 개발 시 별도 도메인에서 API를 호출할 경우 CORS 정책이 필요합니다.
- * 현재는 주석으로 위치만 표시해두고, 프론트엔드 연결 시 활성화합니다.
- */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -53,42 +30,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // REST API이므로 CSRF/폼 로그인/HTTP Basic 모두 비활성화
             .csrf(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
             .httpBasic(AbstractHttpConfigurer::disable)
 
-            // JWT는 stateless — 서버가 세션을 유지하지 않음
+            // JWT 기반 인증 — 서버 세션 미사용
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
 
-            // 경로별 인가 규칙
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()           // 회원가입, 로그인
-                .requestMatchers(                                       // Swagger UI — 인증 불필요
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers(
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
                     "/swagger-ui.html"
                 ).permitAll()
-                .anyRequest().authenticated()                          // 나머지는 JWT 인증 필요
+                .anyRequest().authenticated()
             )
 
-            // 미인증 요청 → 403 대신 401 반환
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
             )
 
-            // JWT 필터를 UsernamePasswordAuthenticationFilter 앞에 삽입
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-            // [CORS — 프론트엔드 연결 시 활성화]
+            // [TODO] 프론트엔드 도메인 확정 후 CORS 설정 활성화
             // .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();
     }
 
-    // [CORS 설정 — 프론트엔드 도메인 확정 후 활성화]
     // @Bean
     // public CorsConfigurationSource corsConfigurationSource() {
     //     CorsConfiguration config = new CorsConfiguration();

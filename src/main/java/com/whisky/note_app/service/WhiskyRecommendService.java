@@ -22,20 +22,11 @@ public class WhiskyRecommendService {
     private final UserPreferenceRepository userPreferenceRepository;
 
     /**
-     * [캐시 적용 — Step 16]
-     *
-     * [@Cacheable]
-     * 동일한 userId + maxPrice 조합으로 요청이 들어오면
-     * DB 조회 없이 Redis에서 바로 결과를 반환합니다.
-     * 캐시가 없을 때만 메서드가 실행되고 결과를 Redis에 저장합니다.
-     *
-     * [캐시 키]
-     * userId + maxPrice 조합으로 유저별, 가격 조건별로 캐시를 분리합니다.
-     * 예: "1_null", "1_100000", "2_50000"
+     * 사용자의 취향 상위 키워드를 기준으로 위스키를 추천합니다.
+     * 캐시 키는 userId + maxPrice 조합으로 구성되며, AI 분석 완료 시 {@link WhiskyAnalysisService}에서 무효화합니다.
      */
     @Cacheable(value = CacheConfig.RECOMMENDATIONS_CACHE, key = "#user.id + '_' + #maxPrice")
     public List<MasterWhisky> getPersonalizedRecommendations(Integer maxPrice, User user) {
-        // 현재 로그인한 사용자의 선호도 데이터만 가져옴
         List<UserPreference> preferences = userPreferenceRepository.findTop5ByUserOrderByScoreDesc(user);
 
         List<MasterWhisky> allWhiskies = masterWhiskyRepository.findAll();

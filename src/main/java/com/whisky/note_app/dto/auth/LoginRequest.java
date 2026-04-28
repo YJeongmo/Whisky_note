@@ -6,10 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * [DTO: LoginRequest — 로그인 요청]
- * POST /api/auth/login 요청 바디입니다.
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -20,5 +16,5 @@ public class LoginRequest {
     private String email;
 
     @NotBlank(message = "비밀번호를 입력해주세요.")
-    private String password; // 로그인은 비밀번호 길이 검증 불필요 (형식만 확인)
+    private String password;
 }
